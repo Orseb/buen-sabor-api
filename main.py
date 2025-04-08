@@ -8,7 +8,9 @@ from src.controllers.user import UserController
 
 
 def create_fastapi_app():
-    fastapi_app = FastAPI()
+    fastapi_app = FastAPI(
+        title="FastAPI Application",
+    )
 
     fastapi_app.add_middleware(
         CORSMiddleware,
