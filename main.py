@@ -30,7 +30,6 @@ def run_app(fastapi_app: FastAPI):
     uvicorn.run(fastapi_app, host="localhost", port=8000)
 
 
-if __name__ == "__main__":
-    db = Database()
-    app = create_fastapi_app()
-    run_app(app)
+db = Database()
+app = create_fastapi_app()
+run_app(app)
