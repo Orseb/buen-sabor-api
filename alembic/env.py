@@ -7,6 +7,7 @@ from src.config.database import DATABASE_URL
 
 # Models import
 from src.models.base import BaseModel
+from src.models.user import UserModel  # noqa
 
 config = context.config
 if config.config_file_name is not None:

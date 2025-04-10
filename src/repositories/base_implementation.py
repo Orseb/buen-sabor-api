@@ -10,9 +10,9 @@ from src.repositories.base import BaseRepository
 from src.schemas.base import BaseSchema
 
 
-class InstanceNotFoundError(Exception):
+class RecordNotFoundError(Exception):
     """
-    InstanceNotFoundError is raised when a record is not found
+    RecordNotFoundError is raised when a record is not found
     """
 
 
@@ -57,7 +57,7 @@ class BaseRepositoryImplementation(BaseRepository):
         with self.session_scope() as session:
             model = session.query(self.model).get(id_key)
             if model is None:
-                raise InstanceNotFoundError(f"No instance found with id {id_key}")
+                raise RecordNotFoundError(f"No record found with id {id_key}")
             return self.schema.model_validate(model)
 
     def find_all(self) -> List[BaseSchema]:
@@ -80,7 +80,7 @@ class BaseRepositoryImplementation(BaseRepository):
                 session.query(self.model).filter(self.model.id_key == id_key).first()
             )
             if instance is None:
-                raise InstanceNotFoundError(f"No instance found with id {id_key}")
+                raise RecordNotFoundError(f"No record found with id {id_key}")
             # Update the instance with the new data
             for key, value in changes.items():
                 if key in instance.__dict__ and value is not None:
@@ -95,7 +95,7 @@ class BaseRepositoryImplementation(BaseRepository):
         with self.session_scope() as session:
             model = session.query(self.model).get(id_key)
             if model is None:
-                raise InstanceNotFoundError(f"No instance found with id {id_key}")
+                raise RecordNotFoundError(f"No record found with id {id_key}")
             session.delete(model)
 
     def save_all(self, models: List[BaseModel]) -> List[BaseSchema]:

@@ -3,6 +3,7 @@ from typing import List, Type
 from fastapi import APIRouter, HTTPException
 
 from src.controllers.base import BaseController
+from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.base import BaseSchema
 from src.services.base import BaseService
 
@@ -25,10 +26,11 @@ class BaseControllerImplementation(BaseController):
 
         @self.router.get("/{id_key}", response_model=schema)
         async def get_one(id_key: int):
-            item = self.get_one(id_key)
-            if item is None:
-                raise HTTPException(status_code=404, detail="Item not found")
-            return item
+            try:
+                item = self.get_one(id_key)
+                return item
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
 
         @self.router.post("/", response_model=schema)
         async def save(schema_in: schema):
@@ -36,14 +38,18 @@ class BaseControllerImplementation(BaseController):
 
         @self.router.put("/{id_key}", response_model=schema)
         async def update(id_key: int, schema_in: schema):
-            item = self.update(id_key, schema_in)
-            if item is None:
-                raise HTTPException(status_code=404, detail="Item not found")
-            return item
+            try:
+                item = self.update(id_key, schema_in)
+                return item
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
 
         @self.router.delete("/{id_key}")
         async def delete(id_key: int):
-            self.delete(id_key)
+            try:
+                self.delete(id_key)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
 
     @property
     def service(self) -> BaseService:
