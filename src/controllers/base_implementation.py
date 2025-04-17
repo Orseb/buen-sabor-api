@@ -1,6 +1,8 @@
-from typing import List, Type
+from typing import List, Optional, Type
 
 from fastapi import APIRouter, HTTPException
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base import BaseController
 from src.repositories.base_implementation import RecordNotFoundError
@@ -15,10 +17,11 @@ class BaseControllerImplementation(BaseController):
         self,
         schema: Type[BaseSchema],
         service: BaseService,
+        tags: Optional[List[str]] = None,
     ):
         self.service = service
         self.schema = schema
-        self.router = APIRouter()
+        self.router = APIRouter(tags=tags)
 
         @self.router.get("/", response_model=List[schema])
         async def get_all():
@@ -27,27 +30,42 @@ class BaseControllerImplementation(BaseController):
         @self.router.get("/{id_key}", response_model=schema)
         async def get_one(id_key: int):
             try:
-                item = self.get_one(id_key)
-                return item
+                return self.get_one(id_key)
             except RecordNotFoundError as error:
                 raise HTTPException(status_code=404, detail=str(error))
 
         @self.router.post("/", response_model=schema)
         async def save(schema_in: schema):
-            return self.save(schema_in)
+            try:
+                return self.save(schema_in)
+            except IntegrityError as error:
+                if isinstance(error.orig, UniqueViolation):
+                    raise HTTPException(
+                        status_code=400, detail="Unique constraint violated."
+                    )
+                raise HTTPException(
+                    status_code=500, detail="An unexpected database error occurred."
+                )
 
         @self.router.put("/{id_key}", response_model=schema)
         async def update(id_key: int, schema_in: schema):
             try:
-                item = self.update(id_key, schema_in)
-                return item
+                return self.update(id_key, schema_in)
             except RecordNotFoundError as error:
                 raise HTTPException(status_code=404, detail=str(error))
+            except IntegrityError as error:
+                if isinstance(error.orig, UniqueViolation):
+                    raise HTTPException(
+                        status_code=400, detail="Unique constraint violated."
+                    )
+                raise HTTPException(
+                    status_code=500, detail="An unexpected database error occurred."
+                )
 
         @self.router.delete("/{id_key}")
         async def delete(id_key: int):
             try:
-                self.delete(id_key)
+                return self.delete(id_key)
             except RecordNotFoundError as error:
                 raise HTTPException(status_code=404, detail=str(error))
 
@@ -77,9 +95,9 @@ class BaseControllerImplementation(BaseController):
         """Update data."""
         return self.service.update(id_key, schema)
 
-    def delete(self, id_key: int) -> None:
+    def delete(self, id_key: int) -> BaseSchema:
         """Delete data."""
-        self.service.delete(id_key)
+        return self.service.delete(id_key)
 
     @schema.setter
     def schema(self, value):

@@ -51,7 +51,7 @@ class BaseService(ABC):
         """Update"""
 
     @abstractmethod
-    def delete(self, id_key: int) -> None:
+    def delete(self, id_key: int) -> BaseSchema:
         """Delete"""
 
     @abstractmethod

@@ -5,4 +5,4 @@ from src.services.user import UserService
 
 class UserController(BaseControllerImplementation):
     def __init__(self):
-        super().__init__(UserSchema, UserService())
+        super().__init__(schema=UserSchema, service=UserService(), tags=["User"])

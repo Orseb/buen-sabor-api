@@ -71,7 +71,7 @@ class BaseRepository(ABC):
         """
 
     @abstractmethod
-    def remove(self, id_key: int) -> None:
+    def remove(self, id_key: int) -> BaseSchema:
         """
         Delete a record by id_key
         :param id_key: int

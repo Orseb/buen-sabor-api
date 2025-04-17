@@ -50,9 +50,9 @@ class BaseServiceImplementation(BaseService):
         """Update data"""
         return self.repository.update(id_key, schema.model_dump())
 
-    def delete(self, id_key: int) -> None:
+    def delete(self, id_key: int) -> BaseSchema:
         """Delete data"""
-        self.repository.remove(id_key)
+        return self.repository.remove(id_key)
 
     def to_model(self, schema: BaseSchema) -> BaseModel:
         model_class = type(self.model) if not callable(self.model) else self.model

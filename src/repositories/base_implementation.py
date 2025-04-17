@@ -71,6 +71,8 @@ class BaseRepositoryImplementation(BaseRepository):
     def save(self, model: BaseModel) -> BaseSchema:
         with self.session_scope() as session:
             session.add(model)
+            session.commit()
+            session.refresh(model)
             return self.schema.model_validate(model)
 
     def update(self, id_key: int, changes: dict) -> BaseSchema:
@@ -86,17 +88,20 @@ class BaseRepositoryImplementation(BaseRepository):
                 if key in instance.__dict__ and value is not None:
                     setattr(instance, key, value)
             session.commit()
+            session.refresh(instance)
             # Retrieve the updated instance
             # Validate the updated instance with the schema
             schema = self.schema.model_validate(instance)
         return schema
 
-    def remove(self, id_key: int) -> None:
+    def remove(self, id_key: int) -> BaseSchema:
         with self.session_scope() as session:
             model = session.query(self.model).get(id_key)
             if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
+            schema = self.schema.model_validate(model)
             session.delete(model)
+            return schema
 
     def save_all(self, models: List[BaseModel]) -> List[BaseSchema]:
         with self.session_scope() as session:
