@@ -7,5 +7,6 @@ class BaseSchema(BaseModel):
     class Config:
         from_attributes = True
         arbitrary_types_allowed = True
+        use_enum_values = True
 
     id_key: Optional[int] = None
