@@ -2,7 +2,7 @@ from fastapi import APIRouter
 
 from src.config.database import Database
 
-router = APIRouter()
+router = APIRouter(tags=["Health Check"])
 db = Database()
 
 
