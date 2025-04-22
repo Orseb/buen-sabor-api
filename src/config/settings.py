@@ -16,5 +16,10 @@ class Settings(BaseSettings):
     algorithm: str = os.getenv("ALGORITHM")
     access_token_expire_minutes: int = os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES")
 
+    # OAuth Config
+    google_client_id: str = os.getenv("GOOGLE_CLIENT_ID")
+    google_client_secret: str = os.getenv("GOOGLE_CLIENT_SECRET")
+    google_redirect_uri: str = os.getenv("GOOGLE_REDIRECT_URI")
+
 
 settings = Settings()
