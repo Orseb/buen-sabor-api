@@ -21,4 +21,5 @@ class UserModel(BaseModel):
     email = Column(String, unique=True)
     password = Column(String)
     role = Column(Enum(UserRole), nullable=False, default=UserRole.cliente)
+    google_sub = Column(String)
     active = Column(Boolean)

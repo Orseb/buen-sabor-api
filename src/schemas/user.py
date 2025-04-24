@@ -10,4 +10,5 @@ class UserSchema(BaseSchema):
     email: EmailStr
     password: str
     role: UserRole
+    google_sub: str
     active: bool = True
