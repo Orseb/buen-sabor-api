@@ -1,3 +1,5 @@
+import logging
+
 from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
 from starlette.status import HTTP_401_UNAUTHORIZED
@@ -6,6 +8,8 @@ from src.config.auth import oauth
 from src.config.settings import settings
 from src.schemas.auth import GoogleUser
 from src.services.user import UserService
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["Auth"])
 
@@ -29,11 +33,13 @@ async def google_auth(
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Could not validate credentials."
         )
-    print(user_response)
+    try:
 
-    google_user = GoogleUser(**user_response["userinfo"])
+        google_user = GoogleUser(**user_response["userinfo"])
 
-    existing_user = await user_service.get_user_by_google_sub(google_user.sub)
-    print(existing_user)
+        existing_user = await user_service.get_user_by_google_sub(google_user.sub)
+        print(existing_user)
 
-    return user_response
+        return user_response
+    except Exception as e:
+        logger.error("Error during Google authentication: %s", e, exc_info=True)
