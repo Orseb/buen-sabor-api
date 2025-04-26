@@ -29,6 +29,7 @@ async def google_auth(
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Could not validate credentials."
         )
+    print(user_response)
 
     google_user = GoogleUser(**user_response["userinfo"])
 
