@@ -20,6 +20,6 @@ class UserModel(BaseModel):
     phone_number = Column(String)
     email = Column(String, unique=True)
     password = Column(String)
-    role = Column(Enum(UserRole), nullable=False, default=UserRole.cliente)
+    role = Column(Enum(UserRole), nullable=False)
     google_sub = Column(String)
     active = Column(Boolean)

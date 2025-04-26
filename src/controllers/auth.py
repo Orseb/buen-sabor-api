@@ -34,7 +34,7 @@ async def google_auth(
 
     user = await user_service.get_user_by_google_sub(google_user.sub)
     if not user:
-        print("User not found, creating new user")
+        user = await user_service.create_or_update_user_from_google_info(google_user)
 
     print(user)
 

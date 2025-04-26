@@ -21,3 +21,14 @@ class UserRepository(BaseRepositoryImplementation):
                 return None
 
             return self.schema.model_validate(instance)
+
+    def get_user_by_email(self, email: str) -> UserSchema | None:
+        """
+        Get a user by their email.
+        """
+        with self.session_scope() as session:
+            instance = session.query(UserModel).filter(UserModel.email == email).first()
+            if instance is None:
+                return None
+
+            return self.schema.model_validate(instance)
