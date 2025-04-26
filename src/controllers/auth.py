@@ -1,18 +1,48 @@
 from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
+from psycopg2.errors import UniqueViolation
+from sqlalchemy.exc import IntegrityError
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from src.config.auth import oauth
 from src.config.settings import settings
-from src.schemas.auth import GoogleUser
+from src.schemas.auth import GoogleUser, LoginRequest, RegisterRequest
 from src.services.user import UserService
-from src.utils.auth import create_access_token
+from src.utils.auth import authenticate_user, create_access_token, hash_password
 
 router = APIRouter(tags=["Auth"])
 
 
 def get_user_service() -> UserService:
     return UserService()
+
+
+@router.post("/register")
+async def register(
+    new_user: RegisterRequest, user_service: UserService = Depends(get_user_service)
+):
+    new_user.password = hash_password(new_user.password)
+    try:
+        new_user = user_service.save(new_user)
+
+    except IntegrityError as error:
+        if isinstance(error.orig, UniqueViolation):
+            raise HTTPException(
+                status_code=400, detail="Ya existe un usuario con ese correo."
+            )
+
+    return new_user
+
+
+@router.post("/login")
+async def login(user: LoginRequest):
+    user = authenticate_user(user.email, user.password)
+    if not user:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, detail="Correo o contraseña inválidos."
+        )
+
+    return {"access_token": create_access_token(user.email, user.id_key, user.role)}
 
 
 @router.get("/google/login")
