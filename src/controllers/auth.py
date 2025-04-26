@@ -6,6 +6,7 @@ from src.config.auth import oauth
 from src.config.settings import settings
 from src.schemas.auth import GoogleUser
 from src.services.user import UserService
+from src.utils.auth import create_access_token
 
 router = APIRouter(tags=["Auth"])
 
@@ -36,6 +37,4 @@ async def google_auth(
     if not user:
         user = await user_service.create_or_update_user_from_google_info(google_user)
 
-    print(user)
-
-    return user_response
+    return {"access_token": create_access_token(user.email, user.id_key, user.role)}
