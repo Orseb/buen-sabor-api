@@ -7,7 +7,7 @@ class UserRepository(BaseRepositoryImplementation):
     def __init__(self):
         super().__init__(UserModel, UserSchema)
 
-    def get_user_by_google_sub(self, google_sub: str) -> UserSchema:
+    def get_user_by_google_sub(self, google_sub: str) -> UserSchema | None:
         """
         Get a user by their google_sub.
         """
@@ -17,4 +17,7 @@ class UserRepository(BaseRepositoryImplementation):
                 .filter(UserModel.google_sub == str(google_sub))
                 .first()
             )
+            if instance is None:
+                return None
+
             return self.schema.model_validate(instance)

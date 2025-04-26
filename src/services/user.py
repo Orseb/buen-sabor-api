@@ -12,7 +12,7 @@ class UserService(BaseServiceImplementation):
         )
         self.user_repository = UserRepository()
 
-    async def get_user_by_google_sub(self, google_sub: str) -> UserSchema:
+    async def get_user_by_google_sub(self, google_sub: str) -> UserSchema | None:
         """
         Get a user by their Google subscription ID.
         """
