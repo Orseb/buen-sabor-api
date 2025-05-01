@@ -8,9 +8,11 @@ from src.schemas.base import BaseSchema
 
 class UserSchema(BaseSchema):
     full_name: str
-    phone_number: Optional[str]
+    phone_number: Optional[str] = None
     email: EmailStr
-    password: Optional[str]
+    password: Optional[str] = None
     role: UserRole = "cliente"
-    google_sub: str
+    google_sub: Optional[str] = None
     active: Optional[bool] = True
+
+    # TODO Optimize schema
