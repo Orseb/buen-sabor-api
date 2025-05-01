@@ -1,7 +1,7 @@
 from typing import List, Optional, Type
 
 from fastapi import APIRouter, HTTPException
-from psycopg2.errors import UniqueViolation
+from psycopg2.errors import UniqueViolation  # noqa
 from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base import BaseController

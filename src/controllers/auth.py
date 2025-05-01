@@ -1,6 +1,6 @@
 from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
-from psycopg2.errors import UniqueViolation
+from psycopg2.errors import UniqueViolation  # noqa
 from sqlalchemy.exc import IntegrityError
 from starlette.status import HTTP_401_UNAUTHORIZED
 

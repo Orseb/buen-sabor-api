@@ -24,6 +24,7 @@ class RegisterRequest(BaseModel):
     phone_number: str
     password: Annotated[str, AfterValidator(hash_password)]
     role: UserRole = "cliente"
+    active: bool = True
 
 
 class LoginRequest(BaseModel):
