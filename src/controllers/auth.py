@@ -34,14 +34,20 @@ async def register(
 
 
 @router.post("/login")
-async def login(user: LoginRequest):
-    user = authenticate_user(user.email, user.password)
-    if not user:
+async def login(
+    user: LoginRequest, user_service: UserService = Depends(get_user_service)
+):
+    authenticated_user = authenticate_user(user.email, user.password, user_service)
+    if not authenticated_user:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Correo o contraseña inválidos."
         )
 
-    return {"access_token": create_access_token(user.email, user.id_key, user.role)}
+    return {
+        "access_token": create_access_token(
+            authenticated_user.email, authenticated_user.id_key, authenticated_user.role
+        )
+    }
 
 
 @router.get("/google/login")
@@ -62,8 +68,8 @@ async def google_auth(
 
     google_user = GoogleUser(**user_response["userinfo"])
 
-    user = await user_service.get_user_by_google_sub(google_user.sub)
+    user = user_service.get_one_by("google_sub", google_user.sub)
     if not user:
-        user = await user_service.create_or_update_user_from_google_info(google_user)
+        user = user_service.create_or_update_user_from_google_info(google_user)
 
     return {"access_token": create_access_token(user.email, user.id_key, user.role)}

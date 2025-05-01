@@ -14,17 +14,8 @@ class UserService(BaseServiceImplementation):
             create_schema=CreateUserSchema,
             response_schema=ResponseUserSchema,
         )
-        self.user_repository = UserRepository()
 
-    async def get_user_by_google_sub(
-        self, google_sub: str
-    ) -> ResponseUserSchema | None:
-        """
-        Get a user by their Google subscription ID.
-        """
-        return self.user_repository.get_user_by_google_sub(google_sub)
-
-    async def create_or_update_user_from_google_info(
+    def create_or_update_user_from_google_info(
         self, google_user: GoogleUser
     ) -> ResponseUserSchema:
         """
@@ -32,18 +23,16 @@ class UserService(BaseServiceImplementation):
         """
         user_email = google_user.email
 
-        existing_user = self.user_repository.get_user_by_email(user_email)
+        existing_user = self.repository.find_by("email", user_email)
         if existing_user:
-            return self.user_repository.update(
+            return self.repository.update(
                 existing_user.id_key, {"google_sub": google_user.sub}
             )
 
-        new_user = UserModel(
-            full_name=google_user.name,
-            email=google_user.email,
-            google_sub=google_user.sub,
-            role="cliente",
-            active=True,
+        return self.save(
+            CreateUserSchema(
+                full_name=google_user.name,
+                email=google_user.email,
+                google_sub=google_user.sub,
+            )
         )
-
-        return self.user_repository.save(new_user)

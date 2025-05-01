@@ -47,6 +47,15 @@ class BaseRepository(ABC):
         """
 
     @abstractmethod
+    def find_by(self, field_name: str, field_value: any) -> BaseSchema:
+        """
+        Find by specific field_name
+        :param field_name:
+        :param field_value:
+        :return BaseSchema:
+        """
+
+    @abstractmethod
     def find_all(self) -> List[BaseSchema]:
         """
         Find all records

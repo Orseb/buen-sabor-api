@@ -12,7 +12,7 @@ def hash_password(value: str) -> str:
     """
     Hashes password using bcrypt
     """
-    if re.compile(r"^\$2[aby]\$.{56}$").match(value):
+    if not value or re.compile(r"^\$2[aby]\$.{56}$").match(value):
         return value
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(value.encode("utf-8"), salt)
@@ -22,10 +22,10 @@ def hash_password(value: str) -> str:
 class BaseUserSchema(BaseSchema):
     full_name: str
     email: EmailStr
-    role: UserRole = "cliente"
 
 
 class CreateUserSchema(BaseUserSchema):
+    role: Optional[UserRole] = "cliente"
     phone_number: Optional[str] = None
     password: Optional[Annotated[str, AfterValidator(hash_password)]] = None
     google_sub: Optional[str] = None

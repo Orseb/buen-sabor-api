@@ -66,6 +66,17 @@ class BaseRepositoryImplementation(BaseRepository):
                 raise RecordNotFoundError(f"No record found with id {id_key}")
             return self.schema.model_validate(model)
 
+    def find_by(self, field_name: str, field_value: any) -> bool | BaseSchema:
+        with self.session_scope() as session:
+            model = (
+                session.query(self.model)
+                .filter(getattr(self.model, field_name) == field_value)
+                .first()
+            )
+            if model is None:
+                return False
+            return self.schema.model_validate(model)
+
     def find_all(self) -> List[BaseSchema]:
         with self.session_scope() as session:
             models = session.query(self.model).all()

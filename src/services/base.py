@@ -43,6 +43,10 @@ class BaseService(ABC):
         """Get by id"""
 
     @abstractmethod
+    def get_one_by(self, field_name: str, field_value: any) -> BaseSchema:
+        """Get by field_name"""
+
+    @abstractmethod
     def save(self, schema: BaseSchema) -> BaseSchema:
         """Save"""
 

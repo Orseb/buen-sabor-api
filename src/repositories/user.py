@@ -1,5 +1,3 @@
-from pydantic import EmailStr
-
 from src.models.user import UserModel
 from src.repositories.base_implementation import BaseRepositoryImplementation
 from src.schemas.user import CreateUserSchema, ResponseUserSchema
@@ -12,29 +10,3 @@ class UserRepository(BaseRepositoryImplementation):
             create_schema=CreateUserSchema,
             response_schema=ResponseUserSchema,
         )
-
-    def get_user_by_google_sub(self, google_sub: str) -> ResponseUserSchema | None:
-        """
-        Get a user by their google_sub.
-        """
-        with self.session_scope() as session:
-            instance = (
-                session.query(UserModel)
-                .filter(UserModel.google_sub == str(google_sub))
-                .first()
-            )
-            if instance is None:
-                return None
-
-            return self.schema.model_validate(instance)
-
-    def get_user_by_email(self, email: EmailStr | str) -> ResponseUserSchema | None:
-        """
-        Get a user by their email.
-        """
-        with self.session_scope() as session:
-            instance = session.query(UserModel).filter(UserModel.email == email).first()
-            if instance is None:
-                return None
-
-            return self.schema.model_validate(instance)

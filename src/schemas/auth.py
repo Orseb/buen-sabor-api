@@ -11,7 +11,7 @@ def hash_password(value: str) -> str:
     """
     Hashes password using bcrypt
     """
-    if re.compile(r"^\$2[aby]\$.{56}$").match(value):
+    if not value or re.compile(r"^\$2[aby]\$.{56}$").match(value):
         return value
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(value.encode("utf-8"), salt)
@@ -34,6 +34,6 @@ class LoginRequest(BaseModel):
 
 class GoogleUser(BaseModel):
     sub: str
-    email: str
+    email: EmailStr
     name: str
     picture: str

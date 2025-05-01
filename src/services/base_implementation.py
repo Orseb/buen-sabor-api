@@ -44,6 +44,10 @@ class BaseServiceImplementation(BaseService):
         """Get one data"""
         return self.repository.find(id_key)
 
+    def get_one_by(self, field_name: str, field_value: any):
+        """Get one data by field"""
+        return self.repository.find_by(field_name, field_value)
+
     def save(self, schema: BaseSchema) -> BaseSchema:
         """Save data"""
         return self.repository.save(self.to_model(schema))
