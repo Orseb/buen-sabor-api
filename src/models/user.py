@@ -16,10 +16,10 @@ class UserRole(enum.Enum):
 class UserModel(BaseModel):
     __tablename__ = "user"
 
-    full_name = Column(String)
+    full_name = Column(String, nullable=False)
     phone_number = Column(String)
-    email = Column(String, unique=True)
+    email = Column(String, nullable=False, unique=True)
     password = Column(String)
     role = Column(Enum(UserRole), nullable=False)
     google_sub = Column(String)
-    active = Column(Boolean)
+    active = Column(Boolean, nullable=False)
