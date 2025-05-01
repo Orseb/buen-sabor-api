@@ -1,18 +1,36 @@
-from typing import Optional
+import re
+from typing import Annotated, Optional
 
-from pydantic import EmailStr
+import bcrypt
+from pydantic import AfterValidator, EmailStr
 
 from src.models.user import UserRole
 from src.schemas.base import BaseSchema
 
 
-class UserSchema(BaseSchema):
+def hash_password(value: str) -> str:
+    """
+    Hashes password using bcrypt
+    """
+    if re.compile(r"^\$2[aby]\$.{56}$").match(value):
+        return value
+    salt = bcrypt.gensalt()
+    hashed_password = bcrypt.hashpw(value.encode("utf-8"), salt)
+    return hashed_password.decode("utf-8")
+
+
+class BaseUserSchema(BaseSchema):
     full_name: str
-    phone_number: Optional[str] = None
     email: EmailStr
-    password: Optional[str] = None
     role: UserRole = "cliente"
+
+
+class CreateUserSchema(BaseUserSchema):
+    phone_number: Optional[str] = None
+    password: Optional[Annotated[str, AfterValidator(hash_password)]] = None
     google_sub: Optional[str] = None
     active: Optional[bool] = True
 
-    # TODO Optimize schema
+
+class ResponseUserSchema(CreateUserSchema):
+    id_key: int

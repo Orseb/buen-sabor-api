@@ -21,9 +21,15 @@ class BaseRepositoryImplementation(BaseRepository):
     Class BaseRepositoryImpl implements BaseRepository
     """
 
-    def __init__(self, model: Type[BaseModel], schema: Type[BaseSchema]):
+    def __init__(
+        self,
+        model: Type[BaseModel],
+        create_schema: Type[BaseSchema],
+        response_schema: Type[BaseSchema],
+    ):
         self._model = model
-        self._schema = schema
+        self._create_schema = create_schema
+        self._response_schema = response_schema
         self.logger = logging.getLogger(__name__)
         self._session = Database().get_session()
 
@@ -37,7 +43,7 @@ class BaseRepositoryImplementation(BaseRepository):
 
     @property
     def schema(self) -> Type[BaseSchema]:
-        return self._schema
+        return self._response_schema
 
     @contextmanager
     def session_scope(self):

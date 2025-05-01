@@ -8,7 +8,7 @@ from src.config.auth import oauth
 from src.config.settings import settings
 from src.schemas.auth import GoogleUser, LoginRequest, RegisterRequest
 from src.services.user import UserService
-from src.utils.auth import authenticate_user, create_access_token, hash_password
+from src.utils.auth import authenticate_user, create_access_token
 
 router = APIRouter(tags=["Auth"])
 
@@ -21,7 +21,6 @@ def get_user_service() -> UserService:
 async def register(
     new_user: RegisterRequest, user_service: UserService = Depends(get_user_service)
 ):
-    new_user.password = hash_password(new_user.password)
     try:
         new_user = user_service.save(new_user)
 

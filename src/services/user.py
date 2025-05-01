@@ -1,7 +1,7 @@
 from src.models.user import UserModel
 from src.repositories.user import UserRepository
 from src.schemas.auth import GoogleUser
-from src.schemas.user import UserSchema
+from src.schemas.user import CreateUserSchema, ResponseUserSchema
 from src.services.base_implementation import BaseServiceImplementation
 
 
@@ -9,11 +9,16 @@ class UserService(BaseServiceImplementation):
 
     def __init__(self):
         super().__init__(
-            repository=UserRepository(), model=UserModel, schema=UserSchema
+            repository=UserRepository(),
+            model=UserModel,
+            create_schema=CreateUserSchema,
+            response_schema=ResponseUserSchema,
         )
         self.user_repository = UserRepository()
 
-    async def get_user_by_google_sub(self, google_sub: str) -> UserSchema | None:
+    async def get_user_by_google_sub(
+        self, google_sub: str
+    ) -> ResponseUserSchema | None:
         """
         Get a user by their Google subscription ID.
         """
@@ -21,7 +26,7 @@ class UserService(BaseServiceImplementation):
 
     async def create_or_update_user_from_google_info(
         self, google_user: GoogleUser
-    ) -> UserSchema:
+    ) -> ResponseUserSchema:
         """
         Creates user with obtained info from google login
         """

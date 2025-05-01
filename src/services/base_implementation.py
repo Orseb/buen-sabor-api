@@ -13,11 +13,13 @@ class BaseServiceImplementation(BaseService):
         self,
         repository: BaseRepository,
         model: Type[BaseModel],
-        schema: Type[BaseSchema],
+        create_schema: Type[BaseSchema],
+        response_schema: Type[BaseSchema],
     ):
         self.repository = repository
         self.model = model
-        self.schema = schema
+        self.create_schema = create_schema
+        self.response_schema = response_schema
 
     @property
     def repository(self) -> BaseRepository:
@@ -25,9 +27,9 @@ class BaseServiceImplementation(BaseService):
         return self._repository
 
     @property
-    def schema(self) -> BaseSchema:
+    def schema(self) -> Type[BaseSchema]:
         """Pydantic Schema to validate data"""
-        return self._schema
+        return self.response_schema
 
     @property
     def model(self) -> BaseModel:
@@ -69,4 +71,4 @@ class BaseServiceImplementation(BaseService):
 
     @schema.setter
     def schema(self, value):
-        self._schema = value
+        self.response_schema = value
