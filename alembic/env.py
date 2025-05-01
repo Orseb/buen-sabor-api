@@ -7,6 +7,8 @@ from src.config.database import DATABASE_URL
 
 # Models import
 from src.models.base import BaseModel
+from src.models.ingredient_category import IngredientCategoryModel  # noqa
+from src.models.product_category import ProductCategoryModel  # noqa
 from src.models.user import UserModel  # noqa
 
 config = context.config
