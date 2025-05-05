@@ -13,6 +13,7 @@ from src.controllers.manufactured_item_category import (
     ManufacturedItemCategoryController,
 )
 from src.controllers.measurement_unit import MeasurementUnitController
+from src.controllers.province import ProvinceController
 from src.controllers.user import UserController
 
 db = Database()
@@ -32,6 +33,7 @@ app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 app.include_router(health_check_controller, prefix="/health_check")
 app.include_router(auth_router, prefix="/auth")
 app.include_router(CountryController().router, prefix="/country")
+app.include_router(ProvinceController().router, prefix="/province")
 app.include_router(MeasurementUnitController().router, prefix="/measurement_unit")
 app.include_router(
     ManufacturedItemCategoryController().router, prefix="/manufactured_item_category"
