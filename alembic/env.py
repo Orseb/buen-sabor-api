@@ -4,9 +4,10 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from src.config.database import DATABASE_URL
+from src.models.base import BaseModel
 
 # Models import
-from src.models.base import BaseModel
+from src.models.country import CountryModel  # noqa
 from src.models.inventory_item import InventoryItemModel  # noqa
 from src.models.inventory_item_category import InventoryItemCategoryModel  # noqa
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel  # noqa
