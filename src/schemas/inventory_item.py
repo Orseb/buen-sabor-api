@@ -10,6 +10,7 @@ class BaseInventoryItemSchema(BaseSchema):
     price: float
     purchase_cost: float
     active: bool = True
+    is_ingredient: bool = True
 
 
 class CreateInventoryItemSchema(BaseInventoryItemSchema):
