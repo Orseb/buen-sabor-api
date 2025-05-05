@@ -7,6 +7,7 @@ from src.config.database import DATABASE_URL
 
 # Models import
 from src.models.base import BaseModel
+from src.models.inventory_item import InventoryItemModel  # noqa
 from src.models.inventory_item_category import InventoryItemCategoryModel  # noqa
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel  # noqa
 from src.models.measurement_unit import MeasurementUnitModel  # noqa

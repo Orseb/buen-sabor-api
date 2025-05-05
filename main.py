@@ -6,6 +6,7 @@ from src.config.database import Database
 from src.config.settings import settings
 from src.controllers.auth import router as auth_router
 from src.controllers.health_check import router as health_check_controller
+from src.controllers.inventory_item import InventoryItemController
 from src.controllers.inventory_item_category import InventoryItemCategoryController
 from src.controllers.manufactured_item_category import (
     ManufacturedItemCategoryController,
@@ -36,4 +37,5 @@ app.include_router(
 app.include_router(
     InventoryItemCategoryController().router, prefix="/inventory_item_category"
 )
+app.include_router(InventoryItemController().router, prefix="/inventory_item")
 app.include_router(UserController().router, prefix="/user")
