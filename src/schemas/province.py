@@ -1,5 +1,5 @@
 from src.schemas.base import BaseSchema
-from src.schemas.country import ResponseCountrySchema
+from src.schemas.locality import ResponseLocalitySchema
 
 
 class BaseProvinceSchema(BaseSchema):
@@ -10,6 +10,6 @@ class CreateProvinceSchema(BaseProvinceSchema):
     country_id: int
 
 
-class ResponseProvinceSchema(BaseProvinceSchema):
-    country: ResponseCountrySchema
+class ResponseProvinceSchema(CreateProvinceSchema):
+    localities: list[ResponseLocalitySchema] = []
     id_key: int

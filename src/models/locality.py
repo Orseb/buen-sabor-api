@@ -15,3 +15,5 @@ class LocalityModel(BaseModel):
         nullable=False,
     )
     province = relationship("ProvinceModel", back_populates="localities")
+
+    addresses = relationship("AddressModel", back_populates="locality")

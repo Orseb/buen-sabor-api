@@ -1,6 +1,7 @@
 import enum
 
 from sqlalchemy import Boolean, Column, Enum, String
+from sqlalchemy.orm import relationship
 
 from src.models.base import BaseModel
 
@@ -23,3 +24,4 @@ class UserModel(BaseModel):
     role = Column(Enum(UserRole), nullable=False)
     google_sub = Column(String)
     active = Column(Boolean, nullable=False)
+    address = relationship("AddressModel", back_populates="user")

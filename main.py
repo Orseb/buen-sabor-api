@@ -4,6 +4,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from src.config.database import Database
 from src.config.settings import settings
+from src.controllers.address import AddressController
 from src.controllers.auth import router as auth_router
 from src.controllers.country import CountryController
 from src.controllers.health_check import router as health_check_controller
@@ -36,6 +37,7 @@ app.include_router(auth_router, prefix="/auth")
 app.include_router(CountryController().router, prefix="/country")
 app.include_router(ProvinceController().router, prefix="/province")
 app.include_router(LocalityController().router, prefix="/locality")
+app.include_router(AddressController().router, prefix="/address")
 app.include_router(MeasurementUnitController().router, prefix="/measurement_unit")
 app.include_router(
     ManufacturedItemCategoryController().router, prefix="/manufactured_item_category"
