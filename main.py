@@ -9,6 +9,7 @@ from src.controllers.country import CountryController
 from src.controllers.health_check import router as health_check_controller
 from src.controllers.inventory_item import InventoryItemController
 from src.controllers.inventory_item_category import InventoryItemCategoryController
+from src.controllers.locality import LocalityController
 from src.controllers.manufactured_item_category import (
     ManufacturedItemCategoryController,
 )
@@ -34,6 +35,7 @@ app.include_router(health_check_controller, prefix="/health_check")
 app.include_router(auth_router, prefix="/auth")
 app.include_router(CountryController().router, prefix="/country")
 app.include_router(ProvinceController().router, prefix="/province")
+app.include_router(LocalityController().router, prefix="/locality")
 app.include_router(MeasurementUnitController().router, prefix="/measurement_unit")
 app.include_router(
     ManufacturedItemCategoryController().router, prefix="/manufactured_item_category"

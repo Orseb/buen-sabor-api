@@ -10,6 +10,7 @@ from src.models.base import BaseModel
 from src.models.country import CountryModel  # noqa
 from src.models.inventory_item import InventoryItemModel  # noqa
 from src.models.inventory_item_category import InventoryItemCategoryModel  # noqa
+from src.models.locality import LocalityModel  # noqa
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel  # noqa
 from src.models.measurement_unit import MeasurementUnitModel  # noqa
 from src.models.province import ProvinceModel  # noqa

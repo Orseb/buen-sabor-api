@@ -15,3 +15,4 @@ class ProvinceModel(BaseModel):
         nullable=False,
     )
     country = relationship("CountryModel", back_populates="provinces")
+    localities = relationship("LocalityModel", back_populates="province")
