@@ -1,4 +1,4 @@
-from typing import List, Type
+from typing import Any, Dict, List, Type, Union
 
 from src.models.base import BaseModel
 from src.repositories.base import BaseRepository
@@ -52,9 +52,17 @@ class BaseServiceImplementation(BaseService):
         """Save data"""
         return self.repository.save(self.to_model(schema))
 
-    def update(self, id_key: int, schema: BaseSchema) -> BaseSchema:
+    def update(
+        self, id_key: int, schema_or_dict: Union[BaseSchema, Dict[str, Any]]
+    ) -> BaseSchema:
         """Update data"""
-        return self.repository.update(id_key, schema.model_dump())
+        # Check if schema_or_dict is a dictionary or a Pydantic schema
+        if isinstance(schema_or_dict, dict):
+            changes = schema_or_dict
+        else:
+            changes = schema_or_dict.model_dump()
+
+        return self.repository.update(id_key, changes)
 
     def delete(self, id_key: int) -> BaseSchema:
         """Delete data"""

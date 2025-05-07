@@ -22,3 +22,7 @@ class ResponseInventoryItemSchema(BaseInventoryItemSchema):
     measurement_unit: ResponseMeasurementUnitSchema
     category: ResponseInventoryItemCategorySchema
     id_key: int
+
+
+class UpdateStockInventoryItemSchema(BaseSchema):
+    current_stock: int

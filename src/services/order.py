@@ -1,6 +1,7 @@
 from typing import List
 
 from src.models.order import DeliveryMethod, OrderModel, OrderStatus
+from src.models.order_detail import OrderDetailModel
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
@@ -35,11 +36,13 @@ class OrderService(BaseServiceImplementation):
 
         # Save order details
         for detail in details:
-            detail.order_id = order.id_key
-            self.order_detail_repository.save(detail)
+            detail_dict = detail.model_dump()
+            detail_dict["order_id"] = order.id_key
+            detail_model = OrderDetailModel(**detail_dict)
+            self.order_detail_repository.save(detail_model)
 
         # Update inventory stock
-        self._update_inventory_stock(details)
+        self._update_inventory_stock(details, order.id_key)
 
         # Calculate estimated time
         estimated_time = self._calculate_estimated_time(order.id_key)
@@ -47,7 +50,9 @@ class OrderService(BaseServiceImplementation):
 
         return self.get_one(order.id_key)
 
-    def _update_inventory_stock(self, details: List[CreateOrderDetailSchema]) -> None:
+    def _update_inventory_stock(
+        self, details: List[CreateOrderDetailSchema], order_id: int
+    ) -> None:
         """Update inventory stock based on order details"""
         for detail in details:
             manufactured_item = self.manufactured_item_service.get_one(
