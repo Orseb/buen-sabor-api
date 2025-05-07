@@ -6,13 +6,13 @@ from src.models.base import BaseModel
 
 
 class DayOfWeek(enum.Enum):
-    monday = "Monday"
-    tuesday = "Tuesday"
-    wednesday = "Wednesday"
-    thursday = "Thursday"
-    friday = "Friday"
-    saturday = "Saturday"
-    sunday = "Sunday"
+    monday = "monday"
+    tuesday = "tuesday"
+    wednesday = "wednesday"
+    thursday = "thursday"
+    friday = "friday"
+    saturday = "saturday"
+    sunday = "sunday"
 
 
 class BusinessHoursModel(BaseModel):

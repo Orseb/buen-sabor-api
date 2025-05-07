@@ -8,8 +8,8 @@ from src.models.base import BaseModel
 
 
 class InvoiceType(enum.Enum):
-    factura = "Factura"
-    nota_credito = "Nota de Crédito"
+    factura = "factura"
+    nota_credito = "nota_credito"
 
 
 class InvoiceModel(BaseModel):

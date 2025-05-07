@@ -17,22 +17,22 @@ from src.models.base import BaseModel
 
 
 class OrderStatus(enum.Enum):
-    a_confirmar = "A confirmar"
-    en_cocina = "En cocina"
-    listo = "Listo"
-    en_delivery = "En delivery"
-    entregado = "Entregado"
-    facturado = "Facturado"
+    a_confirmar = "a_confirmar"
+    en_cocina = "en_cocina"
+    listo = "listo"
+    en_delivery = "en_delivery"
+    entregado = "entregado"
+    facturado = "facturado"
 
 
 class DeliveryMethod(enum.Enum):
-    delivery = "Delivery"
-    pickup = "Retiro en local"
+    delivery = "delivery"
+    pickup = "pickup"
 
 
 class PaymentMethod(enum.Enum):
-    cash = "Efectivo"
-    mercado_pago = "Mercado Pago"
+    cash = "cash"
+    mercado_pago = "mercado_pago"
 
 
 class OrderModel(BaseModel):
