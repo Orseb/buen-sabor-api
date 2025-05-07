@@ -6,14 +6,20 @@ from alembic import context
 from src.config.database import DATABASE_URL
 from src.models.address import AddressModel  # noqa
 from src.models.base import BaseModel
+from src.models.business_hours import BusinessHoursModel  # noqa
 
 # Models import
 from src.models.country import CountryModel  # noqa
 from src.models.inventory_item import InventoryItemModel  # noqa
 from src.models.inventory_item_category import InventoryItemCategoryModel  # noqa
+from src.models.invoice import InvoiceModel  # noqa
 from src.models.locality import LocalityModel  # noqa
+from src.models.manufactured_item import ManufacturedItemModel  # noqa
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel  # noqa
+from src.models.manufactured_item_detail import ManufacturedItemDetailModel  # noqa
 from src.models.measurement_unit import MeasurementUnitModel  # noqa
+from src.models.order import OrderModel  # noqa
+from src.models.order_detail import OrderDetailModel  # noqa
 from src.models.province import ProvinceModel  # noqa
 from src.models.user import UserModel  # noqa
 

@@ -25,3 +25,4 @@ class UserModel(BaseModel):
     google_sub = Column(String)
     active = Column(Boolean, nullable=False)
     address = relationship("AddressModel", back_populates="user")
+    orders = relationship("OrderModel", back_populates="user")

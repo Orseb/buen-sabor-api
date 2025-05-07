@@ -24,3 +24,5 @@ class AddressModel(BaseModel):
         nullable=False,
     )
     user = relationship("UserModel", back_populates="address")
+
+    orders = relationship("OrderModel", back_populates="address")

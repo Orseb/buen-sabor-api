@@ -32,3 +32,7 @@ class InventoryItemModel(BaseModel):
     category = relationship(
         "InventoryItemCategoryModel", back_populates="inventory_items"
     )
+
+    manufactured_item_details = relationship(
+        "ManufacturedItemDetailModel", back_populates="inventory_item"
+    )

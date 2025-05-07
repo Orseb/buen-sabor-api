@@ -1,0 +1,21 @@
+from typing import Optional
+
+from src.schemas.base import BaseSchema
+from src.schemas.manufactured_item import ResponseManufacturedItemSchema
+
+
+class BaseOrderDetailSchema(BaseSchema):
+    quantity: int
+    unit_price: float
+    subtotal: float
+
+
+class CreateOrderDetailSchema(BaseOrderDetailSchema):
+    order_id: Optional[int] = None
+    manufactured_item_id: int
+
+
+class ResponseOrderDetailSchema(BaseOrderDetailSchema):
+    order_id: int
+    manufactured_item: ResponseManufacturedItemSchema
+    id_key: int

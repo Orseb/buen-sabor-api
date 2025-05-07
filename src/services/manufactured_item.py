@@ -1,0 +1,140 @@
+from typing import List
+
+from src.models.manufactured_item import ManufacturedItemModel
+from src.repositories.manufactured_item import ManufacturedItemRepository
+from src.repositories.manufactured_item_detail import ManufacturedItemDetailRepository
+from src.schemas.manufactured_item import (
+    CreateManufacturedItemSchema,
+    ResponseManufacturedItemSchema,
+)
+from src.services.base_implementation import BaseServiceImplementation
+from src.services.inventory_item import InventoryItemService
+
+
+class ManufacturedItemService(BaseServiceImplementation):
+    def __init__(self):
+        super().__init__(
+            repository=ManufacturedItemRepository(),
+            model=ManufacturedItemModel,
+            create_schema=CreateManufacturedItemSchema,
+            response_schema=ResponseManufacturedItemSchema,
+        )
+        self.manufactured_item_detail_repository = ManufacturedItemDetailRepository()
+        self.inventory_item_service = InventoryItemService()
+
+    def save(
+        self, schema: CreateManufacturedItemSchema
+    ) -> ResponseManufacturedItemSchema:
+        """Save a manufactured item with its details"""
+        details = schema.details
+        schema.details = []
+        manufactured_item = super().save(schema)
+
+        for detail in details:
+            detail.manufactured_item_id = manufactured_item.id_key
+            self.manufactured_item_detail_repository.save(detail)
+
+        return self.get_one(manufactured_item.id_key)
+
+    def update(
+        self, id_key: int, schema: CreateManufacturedItemSchema
+    ) -> ResponseManufacturedItemSchema:
+        """Update a manufactured item with its details"""
+        details = schema.details
+        schema.details = []
+        manufactured_item = super().update(id_key, schema)
+
+        # Delete existing details
+        with self.repository.session_scope() as session:
+            details_to_delete = (
+                session.query(self.manufactured_item_detail_repository.model)
+                .filter(
+                    self.manufactured_item_detail_repository.model.manufactured_item_id
+                    == id_key
+                )
+                .all()
+            )
+            for detail in details_to_delete:
+                session.delete(detail)
+
+        # Add new details
+        for detail in details:
+            detail.manufactured_item_id = manufactured_item.id_key
+            self.manufactured_item_detail_repository.save(detail)
+
+        return self.get_one(manufactured_item.id_key)
+
+    def check_stock_availability(
+        self, manufactured_item_id: int, quantity: int = 1
+    ) -> bool:
+        """Check if there is enough stock to prepare a manufactured item"""
+        manufactured_item = self.get_one(manufactured_item_id)
+
+        for detail in manufactured_item.details:
+            inventory_item = self.inventory_item_service.get_one(
+                detail.inventory_item.id_key
+            )
+            if inventory_item.current_stock < detail.quantity * quantity:
+                return False
+
+        return True
+
+    def get_max_quantity_available(self, manufactured_item_id: int) -> int:
+        """Get the maximum quantity of a manufactured item that can be prepared"""
+        manufactured_item = self.get_one(manufactured_item_id)
+        max_quantity = float("inf")
+
+        for detail in manufactured_item.details:
+            inventory_item = self.inventory_item_service.get_one(
+                detail.inventory_item.id_key
+            )
+            if detail.quantity > 0:
+                available = inventory_item.current_stock // detail.quantity
+                max_quantity = min(max_quantity, available)
+
+        return max_quantity if max_quantity != float("inf") else 0
+
+    def get_active_items(self) -> List[ResponseManufacturedItemSchema]:
+        """Get all active manufactured items"""
+        with self.repository.session_scope() as session:
+            models = (
+                session.query(self.repository.model)
+                .filter(self.repository.model.active)
+                .all()
+            )
+            schemas = []
+            for model in models:
+                schemas.append(self.schema.model_validate(model))
+            return schemas
+
+    def get_by_category(self, category_id: int) -> List[ResponseManufacturedItemSchema]:
+        """Get all manufactured items by category"""
+        with self.repository.session_scope() as session:
+            models = (
+                session.query(self.repository.model)
+                .filter(
+                    self.repository.model.category_id == category_id,
+                    self.repository.model.active,
+                )
+                .all()
+            )
+            schemas = []
+            for model in models:
+                schemas.append(self.schema.model_validate(model))
+            return schemas
+
+    def search_by_name(self, name: str) -> List[ResponseManufacturedItemSchema]:
+        """Search manufactured items by name"""
+        with self.repository.session_scope() as session:
+            models = (
+                session.query(self.repository.model)
+                .filter(
+                    self.repository.model.name.ilike(f"%{name}%"),
+                    self.repository.model.active,
+                )
+                .all()
+            )
+            schemas = []
+            for model in models:
+                schemas.append(self.schema.model_validate(model))
+            return schemas
