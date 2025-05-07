@@ -19,10 +19,6 @@ class ManufacturedItemController(BaseControllerImplementation):
             tags=["Manufactured Item"],
         )
 
-        @self.router.get("/active", response_model=List[ResponseManufacturedItemSchema])
-        async def get_active_items():
-            return self.service.get_active_items()
-
         @self.router.get(
             "/category/{category_id}",
             response_model=List[ResponseManufacturedItemSchema],

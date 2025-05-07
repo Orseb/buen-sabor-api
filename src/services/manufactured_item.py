@@ -1,6 +1,7 @@
 from typing import List
 
 from src.models.manufactured_item import ManufacturedItemModel
+from src.models.manufactured_item_detail import ManufacturedItemDetailModel
 from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.repositories.manufactured_item_detail import ManufacturedItemDetailRepository
 from src.schemas.manufactured_item import (
@@ -31,8 +32,10 @@ class ManufacturedItemService(BaseServiceImplementation):
         manufactured_item = super().save(schema)
 
         for detail in details:
-            detail.manufactured_item_id = manufactured_item.id_key
-            self.manufactured_item_detail_repository.save(detail)
+            detail_dict = detail.model_dump()
+            detail_dict["manufactured_item_id"] = manufactured_item.id_key
+            detail_model = ManufacturedItemDetailModel(**detail_dict)
+            self.manufactured_item_detail_repository.save(detail_model)
 
         return self.get_one(manufactured_item.id_key)
 
@@ -59,8 +62,10 @@ class ManufacturedItemService(BaseServiceImplementation):
 
         # Add new details
         for detail in details:
-            detail.manufactured_item_id = manufactured_item.id_key
-            self.manufactured_item_detail_repository.save(detail)
+            detail_dict = detail.model_dump()
+            detail_dict["manufactured_item_id"] = manufactured_item.id_key
+            detail_model = ManufacturedItemDetailModel(**detail_dict)
+            self.manufactured_item_detail_repository.save(detail_model)
 
         return self.get_one(manufactured_item.id_key)
 
@@ -94,19 +99,6 @@ class ManufacturedItemService(BaseServiceImplementation):
 
         return max_quantity if max_quantity != float("inf") else 0
 
-    def get_active_items(self) -> List[ResponseManufacturedItemSchema]:
-        """Get all active manufactured items"""
-        with self.repository.session_scope() as session:
-            models = (
-                session.query(self.repository.model)
-                .filter(self.repository.model.active)
-                .all()
-            )
-            schemas = []
-            for model in models:
-                schemas.append(self.schema.model_validate(model))
-            return schemas
-
     def get_by_category(self, category_id: int) -> List[ResponseManufacturedItemSchema]:
         """Get all manufactured items by category"""
         with self.repository.session_scope() as session:
@@ -114,7 +106,7 @@ class ManufacturedItemService(BaseServiceImplementation):
                 session.query(self.repository.model)
                 .filter(
                     self.repository.model.category_id == category_id,
-                    self.repository.model.active,
+                    bool(self.repository.model.active),
                 )
                 .all()
             )
@@ -130,7 +122,7 @@ class ManufacturedItemService(BaseServiceImplementation):
                 session.query(self.repository.model)
                 .filter(
                     self.repository.model.name.ilike(f"%{name}%"),
-                    self.repository.model.active,
+                    bool(self.repository.model.active),
                 )
                 .all()
             )
