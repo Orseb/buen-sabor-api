@@ -1,11 +1,8 @@
 from typing import List
 
-from fastapi import HTTPException
-
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.order import OrderStatus
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
-from src.services.business_hours import BusinessHoursService
 from src.services.invoice import InvoiceService
 from src.services.order import OrderService
 
@@ -18,21 +15,7 @@ class OrderController(BaseControllerImplementation):
             service=OrderService(),
             tags=["Order"],
         )
-        self.business_hours_service = BusinessHoursService()
         self.invoice_service = InvoiceService()
-
-        @self.router.post("/", response_model=ResponseOrderSchema)
-        async def create_order(order: CreateOrderSchema):
-            # Check if restaurant is open
-            if not self.business_hours_service.is_open_now():
-                raise HTTPException(
-                    status_code=400,
-                    detail="Restaurant is closed. "
-                    "Orders can only be placed during business hours.",
-                )
-
-            # Create order
-            return self.service.save(order)
 
         @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
         async def get_by_status(status: OrderStatus):

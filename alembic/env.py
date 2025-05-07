@@ -6,7 +6,6 @@ from alembic import context
 from src.config.database import DATABASE_URL
 from src.models.address import AddressModel  # noqa
 from src.models.base import BaseModel
-from src.models.business_hours import BusinessHoursModel  # noqa
 
 # Models import
 from src.models.country import CountryModel  # noqa
