@@ -20,7 +20,7 @@ def create_access_token(user_email: EmailStr, user_id: int, user_role: UserRole)
 
     encoding = {
         "email": user_email,
-        "sub": user_id,
+        "sub": str(user_id),
         "role": user_role,
         "exp": expires_in,
     }

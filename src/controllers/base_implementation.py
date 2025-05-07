@@ -1,13 +1,15 @@
 from typing import List, Optional, Type
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 from psycopg2.errors import UniqueViolation  # noqa
 from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base import BaseController
+from src.models.user import UserRole
 from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.base import BaseSchema
 from src.services.base import BaseService
+from src.utils.rbac import has_role
 
 
 class BaseControllerImplementation(BaseController):
@@ -19,25 +21,35 @@ class BaseControllerImplementation(BaseController):
         response_schema: Type[BaseSchema],
         service: BaseService,
         tags: Optional[List[str]] = None,
+        required_roles: Optional[List[UserRole]] = None,
     ):
         self.service = service
         self.create_schema = create_schema
         self.response_schema = response_schema
         self.router = APIRouter(tags=tags)
 
+        # Default to admin-only if no roles specified
+        if required_roles is None:
+            required_roles = [UserRole.administrador]
+
+        # Role-based access control dependency
+        role_dependency = has_role(required_roles)
+
         @self.router.get("/", response_model=List[response_schema])
-        async def get_all():
+        async def get_all(current_user: dict = Depends(role_dependency)):
             return self.get_all()
 
         @self.router.get("/{id_key}", response_model=response_schema)
-        async def get_one(id_key: int):
+        async def get_one(id_key: int, current_user: dict = Depends(role_dependency)):
             try:
                 return self.get_one(id_key)
             except RecordNotFoundError as error:
                 raise HTTPException(status_code=404, detail=str(error))
 
         @self.router.post("/", response_model=response_schema)
-        async def save(schema_in: create_schema):
+        async def save(
+            schema_in: create_schema, current_user: dict = Depends(role_dependency)
+        ):
             try:
                 return self.save(schema_in)
             except IntegrityError as error:
@@ -50,7 +62,11 @@ class BaseControllerImplementation(BaseController):
                 )
 
         @self.router.put("/{id_key}", response_model=response_schema)
-        async def update(id_key: int, schema_in: create_schema):
+        async def update(
+            id_key: int,
+            schema_in: create_schema,
+            current_user: dict = Depends(role_dependency),
+        ):
             try:
                 return self.update(id_key, schema_in)
             except RecordNotFoundError as error:
@@ -65,7 +81,7 @@ class BaseControllerImplementation(BaseController):
                 )
 
         @self.router.delete("/{id_key}")
-        async def delete(id_key: int):
+        async def delete(id_key: int, current_user: dict = Depends(role_dependency)):
             try:
                 return self.delete(id_key)
             except RecordNotFoundError as error:
