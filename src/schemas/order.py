@@ -37,19 +37,9 @@ class BaseOrderSchema(BaseSchema):
 
 
 class CreateOrderSchema(BaseOrderSchema):
-    user_id: int
+    user_id: Optional[int] = None
     address_id: Optional[int] = None
     details: List[CreateOrderDetailSchema] = []
-
-    @validator("address_id")
-    def validate_address(cls, v, values):
-        if (
-            "delivery_method" in values
-            and values["delivery_method"] == DeliveryMethod.delivery
-        ):
-            if v is None:
-                raise ValueError("Delivery orders must have an address")
-        return v
 
 
 class ResponseOrderSchema(BaseOrderSchema):

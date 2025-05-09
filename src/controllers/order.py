@@ -1,15 +1,17 @@
 from typing import List
 
 from fastapi import Depends, HTTPException
+from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.models.order import DeliveryMethod, OrderStatus
+from src.models.order import DeliveryMethod, OrderStatus, PaymentMethod
 from src.models.user import UserRole
+from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.services.address import AddressService
 from src.services.invoice import InvoiceService
 from src.services.order import OrderService
-from src.utils.rbac import get_current_user, has_role, optional_auth
+from src.utils.rbac import get_current_user, has_role
 
 
 class OrderController(BaseControllerImplementation):
@@ -22,47 +24,42 @@ class OrderController(BaseControllerImplementation):
             required_roles=[
                 UserRole.administrador,
                 UserRole.cajero,
-            ],  # Admin and cashier can access all orders
+                UserRole.delivery,
+                UserRole.cocinero,
+            ],
         )
         self.invoice_service = InvoiceService()
         self.address_service = AddressService()
 
-        # Override the default routes with custom implementations
         @self.router.post("/generate", response_model=ResponseOrderSchema)
         async def create_order(
             order: CreateOrderSchema, current_user: dict = Depends(get_current_user)
         ):
-            # Set the user_id from the token
             order.user_id = current_user["id"]
 
-            # If delivery method is delivery, verify the address belongs to the user
+            if order.delivery_method == DeliveryMethod.pickup.value:
+                return self.service.save(order)
 
-            if order.delivery_method == DeliveryMethod.delivery.value:
-                if not order.address_id:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Delivery orders must have an address",
-                    )
+            if not order.address_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="An address must be supplied in delivery method.",
+                )
 
-                # Verify the address belongs to the user
-                try:
-                    user_addresses = self.address_service.get_user_addresses(
-                        order.user_id
-                    )
-                    if not any(
-                        addr.id_key == order.address_id for addr in user_addresses
-                    ):
-                        raise HTTPException(
-                            status_code=403,
-                            detail="The selected address does not belong to the user",
-                        )
-                except Exception as e:
-                    raise HTTPException(
-                        status_code=400,
-                        detail=f"Error verifying address: {str(e)}",
-                    )
+            if order.payment_method != PaymentMethod.mercado_pago.value:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Mercado Pago must be selected "
+                    "as the payment method in delivery.",
+                )
 
-            # Create order
+            user_addresses = self.address_service.get_user_addresses(order.user_id)
+            if not any(addr.id_key == order.address_id for addr in user_addresses):
+                raise HTTPException(
+                    status_code=403,
+                    detail="The selected address does not belong to the user",
+                )
+
             return self.service.save(order)
 
         @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
@@ -76,14 +73,12 @@ class OrderController(BaseControllerImplementation):
 
         @self.router.get("/user/{user_id}", response_model=List[ResponseOrderSchema])
         async def get_by_user(
-            user_id: int, current_user: dict = Depends(optional_auth)
+            user_id: int, current_user: dict = Depends(get_current_user)
         ):
-            # If user is requesting their own orders, allow it
-            if current_user and str(current_user["id"]) == str(user_id):
+            if current_user and current_user.get("id") == user_id:
                 return self.service.get_by_user(user_id)
 
-            # Otherwise, require admin or cashier role
-            if not current_user or current_user["role"] not in [
+            if current_user and current_user.get("role") not in [
                 UserRole.administrador.value,
                 UserRole.cajero.value,
             ]:
@@ -99,42 +94,70 @@ class OrderController(BaseControllerImplementation):
             id_key: int,
             status: OrderStatus,
             current_user: dict = Depends(
-                has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
+                has_role(
+                    [
+                        UserRole.administrador,
+                        UserRole.cajero,
+                        UserRole.cocinero,
+                        UserRole.delivery,
+                    ]
+                )
             ),
         ):
-            # Different roles can only update to certain statuses
             if current_user["role"] == UserRole.cocinero.value:
-                allowed_statuses = [OrderStatus.en_cocina, OrderStatus.listo]
-                if status not in allowed_statuses:
+                allowed_statuses = [
+                    OrderStatus.en_cocina.value,
+                    OrderStatus.listo.value,
+                ]
+                if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
                         detail=f"Cook can only update status to: "
-                        f"{[s.value for s in allowed_statuses]}",
+                        f"{[s for s in allowed_statuses]}",
                     )
             elif current_user["role"] == UserRole.delivery.value:
-                allowed_statuses = [OrderStatus.en_delivery, OrderStatus.entregado]
-                if status not in allowed_statuses:
+                allowed_statuses = [
+                    OrderStatus.en_delivery.value,
+                    OrderStatus.entregado.value,
+                ]
+                if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
                         detail=f"Delivery can only update status to: "
-                        f"{[s.value for s in allowed_statuses]}",
+                        f"{[s for s in allowed_statuses]}",
                     )
-
-            return self.service.update_status(id_key, status)
+            try:
+                return self.service.update_status(id_key, status)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
+            except IntegrityError:
+                raise HTTPException(
+                    status_code=500, detail="An unexpected database error occurred."
+                )
 
         @self.router.put("/{id_key}/payment", response_model=ResponseOrderSchema)
         async def process_payment(
             id_key: int,
-            payment_id: str,
-            is_paid: bool = True,
-            current_user: dict = Depends(
-                has_role([UserRole.administrador, UserRole.cajero])
-            ),
+            current_user: dict = Depends(get_current_user),
         ):
-            order = self.service.process_payment(id_key, payment_id, is_paid)
+            try:
+                order = self.service.get_one(id_key)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
+            except IntegrityError:
+                raise HTTPException(
+                    status_code=500, detail="An unexpected database error occurred."
+                )
+            if (
+                order.payment_method == PaymentMethod.cash.value
+                and current_user["role"] != UserRole.cajero.value
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="Only the cashier can confirm the cash payment.",
+                )
 
-            # Generate invoice if paid
-            if is_paid:
-                self.invoice_service.generate_invoice(id_key)
+            paid_order = self.service.process_payment(id_key, order.payment_method)
+            self.invoice_service.generate_invoice(id_key)
 
-            return order
+            return paid_order

@@ -1,5 +1,3 @@
-from typing import List
-
 from src.models.manufactured_item import ManufacturedItemModel
 from src.models.manufactured_item_detail import ManufacturedItemDetailModel
 from src.repositories.manufactured_item import ManufacturedItemRepository
@@ -98,35 +96,3 @@ class ManufacturedItemService(BaseServiceImplementation):
                 max_quantity = min(max_quantity, available)
 
         return max_quantity if max_quantity != float("inf") else 0
-
-    def get_by_category(self, category_id: int) -> List[ResponseManufacturedItemSchema]:
-        """Get all manufactured items by category"""
-        with self.repository.session_scope() as session:
-            models = (
-                session.query(self.repository.model)
-                .filter(
-                    self.repository.model.category_id == category_id,
-                    bool(self.repository.model.active),
-                )
-                .all()
-            )
-            schemas = []
-            for model in models:
-                schemas.append(self.schema.model_validate(model))
-            return schemas
-
-    def search_by_name(self, name: str) -> List[ResponseManufacturedItemSchema]:
-        """Search manufactured items by name"""
-        with self.repository.session_scope() as session:
-            models = (
-                session.query(self.repository.model)
-                .filter(
-                    self.repository.model.name.ilike(f"%{name}%"),
-                    bool(self.repository.model.active),
-                )
-                .all()
-            )
-            schemas = []
-            for model in models:
-                schemas.append(self.schema.model_validate(model))
-            return schemas

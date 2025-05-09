@@ -1,6 +1,5 @@
 import uuid
 from datetime import datetime
-from typing import Optional
 
 from src.models.invoice import InvoiceModel, InvoiceType
 from src.repositories.invoice import InvoiceRepository
@@ -46,9 +45,7 @@ class InvoiceService(BaseServiceImplementation):
 
         return invoice
 
-    def generate_credit_note(
-        self, invoice_id: int, reason: Optional[str] = None
-    ) -> ResponseInvoiceSchema:
+    def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
         """Generate a credit note for an invoice"""
         invoice = self.get_one(invoice_id)
         order = self.order_service.get_one(invoice.order.id_key)

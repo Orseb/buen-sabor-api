@@ -1,6 +1,6 @@
 from typing import List
 
-from src.models.order import DeliveryMethod, OrderModel, OrderStatus
+from src.models.order import DeliveryMethod, OrderModel, OrderStatus, PaymentMethod
 from src.models.order_detail import OrderDetailModel
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
@@ -118,7 +118,14 @@ class OrderService(BaseServiceImplementation):
         return self.update(order_id, {"status": status})
 
     def process_payment(
-        self, order_id: int, payment_id: str, is_paid: bool = True
+        self, order_id: int, payment_method: PaymentMethod
     ) -> ResponseOrderSchema:
         """Process payment for an order"""
-        return self.update(order_id, {"payment_id": payment_id, "is_paid": is_paid})
+        if payment_method == PaymentMethod.cash.value:
+            return self.update(
+                order_id, {"payment_id": "Pago en efectivo", "is_paid": True}
+            )
+
+        return self.update(
+            order_id, {"payment_id": "Pago con Mercado Pago", "is_paid": True}
+        )
