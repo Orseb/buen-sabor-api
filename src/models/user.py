@@ -24,5 +24,5 @@ class UserModel(BaseModel):
     role = Column(Enum(UserRole), nullable=False)
     google_sub = Column(String)
     active = Column(Boolean, nullable=False)
-    address = relationship("AddressModel", back_populates="user")
+    addresses = relationship("AddressModel", back_populates="user")
     orders = relationship("OrderModel", back_populates="user")

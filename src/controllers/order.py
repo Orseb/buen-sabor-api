@@ -1,14 +1,15 @@
-from typing import List, Optional
+from typing import List
 
 from fastapi import Depends, HTTPException
 
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.models.order import OrderStatus
+from src.models.order import DeliveryMethod, OrderStatus
 from src.models.user import UserRole
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
+from src.services.address import AddressService
 from src.services.invoice import InvoiceService
 from src.services.order import OrderService
-from src.utils.rbac import has_role, optional_auth
+from src.utils.rbac import get_current_user, has_role, optional_auth
 
 
 class OrderController(BaseControllerImplementation):
@@ -24,16 +25,42 @@ class OrderController(BaseControllerImplementation):
             ],  # Admin and cashier can access all orders
         )
         self.invoice_service = InvoiceService()
+        self.address_service = AddressService()
 
         # Override the default routes with custom implementations
-        @self.router.post("/", response_model=ResponseOrderSchema)
+        @self.router.post("/generate", response_model=ResponseOrderSchema)
         async def create_order(
-            order: CreateOrderSchema,
-            current_user: Optional[dict] = Depends(optional_auth),
+            order: CreateOrderSchema, current_user: dict = Depends(get_current_user)
         ):
-            # If authenticated, set the user_id from the token
-            if current_user:
-                order.user_id = current_user["id"]
+            # Set the user_id from the token
+            order.user_id = current_user["id"]
+
+            # If delivery method is delivery, verify the address belongs to the user
+
+            if order.delivery_method == DeliveryMethod.delivery.value:
+                if not order.address_id:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Delivery orders must have an address",
+                    )
+
+                # Verify the address belongs to the user
+                try:
+                    user_addresses = self.address_service.get_user_addresses(
+                        order.user_id
+                    )
+                    if not any(
+                        addr.id_key == order.address_id for addr in user_addresses
+                    ):
+                        raise HTTPException(
+                            status_code=403,
+                            detail="The selected address does not belong to the user",
+                        )
+                except Exception as e:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Error verifying address: {str(e)}",
+                    )
 
             # Create order
             return self.service.save(order)

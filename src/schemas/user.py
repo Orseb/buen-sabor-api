@@ -1,10 +1,11 @@
 import re
-from typing import Annotated, Optional
+from typing import Annotated, List, Optional
 
 import bcrypt
 from pydantic import AfterValidator, EmailStr
 
 from src.models.user import UserRole
+from src.schemas.address import ResponseAddressSchema
 from src.schemas.base import BaseSchema
 
 
@@ -34,3 +35,4 @@ class CreateUserSchema(BaseUserSchema):
 
 class ResponseUserSchema(CreateUserSchema):
     id_key: int
+    addresses: Optional[List[ResponseAddressSchema]] = []

@@ -10,6 +10,7 @@ class AddressModel(BaseModel):
     street = Column(String, nullable=False)
     street_number = Column(Integer, nullable=False)
     zip_code = Column(String, nullable=False)
+    name = Column(String, nullable=False)  # Name for the address (e.g., "Home", "Work")
 
     locality_id = Column(
         Integer,
@@ -23,6 +24,6 @@ class AddressModel(BaseModel):
         ForeignKey("user.id_key", ondelete="CASCADE"),
         nullable=False,
     )
-    user = relationship("UserModel", back_populates="address")
+    user = relationship("UserModel", back_populates="addresses")
 
     orders = relationship("OrderModel", back_populates="address")
