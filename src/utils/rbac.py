@@ -33,7 +33,7 @@ def get_current_user(payload: dict = Depends(validate_token)):
     """
     Returns the current user from the JWT token payload
     """
-    user_id = payload.get("sub")
+    user_id = int(payload.get("sub"))
     user_email = payload.get("email")
     user_role = payload.get("role")
 

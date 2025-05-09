@@ -7,6 +7,7 @@ from src.schemas.address import (
     ResponseAddressSchema,
     UpdateAddressSchema,
 )
+from src.schemas.base import BaseSchema
 from src.services.base_implementation import BaseServiceImplementation
 
 
@@ -48,11 +49,11 @@ class AddressService(BaseServiceImplementation):
 
         return self.update(address_id, address)
 
-    def delete_user_address(self, user_id: int, address_id: int) -> None:
+    def delete_user_address(self, user_id: int, address_id: int) -> BaseSchema:
         """Delete an address for a user"""
         # First verify the address belongs to the user
         existing_address = self.get_one(address_id)
         if existing_address.user_id != user_id:
             raise ValueError("Address does not belong to the user")
 
-        self.delete(address_id)
+        return self.delete(address_id)
