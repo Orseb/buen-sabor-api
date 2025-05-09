@@ -19,7 +19,6 @@ from src.controllers.manufactured_item_category import (
 from src.controllers.measurement_unit import MeasurementUnitController
 from src.controllers.order import OrderController
 from src.controllers.province import ProvinceController
-from src.controllers.rbac_example import router as rbac_example_router
 from src.controllers.report import ReportController
 from src.controllers.user import UserController
 
@@ -39,7 +38,6 @@ app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
 
 app.include_router(health_check_controller, prefix="/health_check")
 app.include_router(auth_router, prefix="/auth")
-app.include_router(rbac_example_router, prefix="/rbac")
 app.include_router(CountryController().router, prefix="/country")
 app.include_router(ProvinceController().router, prefix="/province")
 app.include_router(LocalityController().router, prefix="/locality")
