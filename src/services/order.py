@@ -1,6 +1,6 @@
 from typing import List
 
-from src.models.order import DeliveryMethod, OrderModel, OrderStatus, PaymentMethod
+from src.models.order import DeliveryMethod, OrderModel, OrderStatus
 from src.models.order_detail import OrderDetailModel
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
@@ -9,6 +9,7 @@ from src.schemas.order_detail import CreateOrderDetailSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
 from src.services.manufactured_item import ManufacturedItemService
+from src.services.mercado_pago import create_mp_preference
 
 
 class OrderService(BaseServiceImplementation):
@@ -117,15 +118,18 @@ class OrderService(BaseServiceImplementation):
         """Update order status"""
         return self.update(order_id, {"status": status})
 
-    def process_payment(
-        self, order_id: int, payment_method: PaymentMethod
-    ) -> ResponseOrderSchema:
+    def process_cash_payment(self, order: ResponseOrderSchema) -> ResponseOrderSchema:
         """Process payment for an order"""
-        if payment_method == PaymentMethod.cash.value:
-            return self.update(
-                order_id, {"payment_id": "Pago en efectivo", "is_paid": True}
-            )
-
         return self.update(
-            order_id, {"payment_id": "Pago con Mercado Pago", "is_paid": True}
+            order.id_key, {"payment_id": "Pago en efectivo", "is_paid": True}
         )
+
+    def process_mp_payment(self, order: ResponseOrderSchema) -> str:
+
+        preference_id = create_mp_preference(order)
+
+        self.update(
+            order.id_key, {"payment_id": f"MP-{preference_id}", "is_paid": True}
+        )
+
+        return preference_id

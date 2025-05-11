@@ -135,8 +135,41 @@ class OrderController(BaseControllerImplementation):
                     status_code=500, detail="An unexpected database error occurred."
                 )
 
-        @self.router.put("/{id_key}/payment", response_model=ResponseOrderSchema)
-        async def process_payment(
+        @self.router.put("/{id_key}/cash-payment", response_model=ResponseOrderSchema)
+        async def process_cash_payment(
+            id_key: int,
+            current_user: dict = Depends(
+                has_role([UserRole.cajero, UserRole.administrador])
+            ),
+        ):
+            try:
+                order = self.service.get_one(id_key)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
+            except IntegrityError:
+                raise HTTPException(
+                    status_code=500, detail="An unexpected database error occurred."
+                )
+            if order.is_paid:
+                raise HTTPException(
+                    status_code=403,
+                    detail="This order has already been paid.",
+                )
+
+            if order.payment_method != PaymentMethod.cash.value:
+                raise HTTPException(
+                    status_code=403,
+                    detail="This order does not accept cash as the payment method.",
+                )
+
+            paid_order = self.service.process_cash_payment(order)
+
+            self.invoice_service.generate_invoice(order.id_key)
+
+            return paid_order
+
+        @self.router.put("/{id_key}/mp-payment")
+        async def process_mp_payment(
             id_key: int,
             current_user: dict = Depends(get_current_user),
         ):
@@ -148,16 +181,18 @@ class OrderController(BaseControllerImplementation):
                 raise HTTPException(
                     status_code=500, detail="An unexpected database error occurred."
                 )
-            if (
-                order.payment_method == PaymentMethod.cash.value
-                and current_user["role"] != UserRole.cajero.value
-            ):
+            if order.is_paid:
                 raise HTTPException(
                     status_code=403,
-                    detail="Only the cashier can confirm the cash payment.",
+                    detail="This order has already been paid.",
                 )
 
-            paid_order = self.service.process_payment(id_key, order.payment_method)
-            self.invoice_service.generate_invoice(id_key)
+            if order.payment_method != PaymentMethod.mercado_pago.value:
+                raise HTTPException(
+                    status_code=403,
+                    detail="This order does not accept MP as the payment method.",
+                )
 
-            return paid_order
+            preference_id = self.service.process_mp_payment(order)
+
+            return {"preference_id": preference_id}
