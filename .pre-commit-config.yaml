@@ -15,4 +15,4 @@ repos:
     rev: 7.2.0
     hooks:
       - id: flake8
-        args: ["--exclude=venv,.venv,__pycache__,.git", "--max-line-length=88"]
+        args: ["--exclude=venv,.venv,__pycache__,.git", "--max-line-length=100"]

@@ -1,19 +1,24 @@
+from typing import Any, Dict, List
+
 from src.config.mercado_pago import sdk
 from src.schemas.order import ResponseOrderSchema
 
 
 def create_mp_preference(order: ResponseOrderSchema) -> str:
-    preference_data = {
-        "items": [
+    """Create a Mercado Pago preference for an order."""
+    items: List[Dict[str, Any]] = []
+    for detail in order.details:
+        items.append(
             {
-                "title": "Producto de El Buen Sabor",
-                "description": detail.manufactured_item.name,
+                "title": f"El Buen Sabor - {detail.manufactured_item.name}",
+                "description": detail.manufactured_item.description
+                or "Producto de El Buen Sabor",
                 "quantity": detail.quantity,
                 "unit_price": detail.unit_price,
+                "currency_id": "ARS",
             }
-            for detail in order.details
-        ]
-    }
+        )
 
-    preference_response = sdk.preference().create(preference_data)
+    preference_response = sdk.preference().create({"items": items})
+
     return preference_response["response"]["id"]

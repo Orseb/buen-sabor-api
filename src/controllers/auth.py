@@ -1,3 +1,5 @@
+from typing import Any, Dict
+
 from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
 from psycopg2.errors import UniqueViolation  # noqa
@@ -14,29 +16,31 @@ router = APIRouter(tags=["Auth"])
 
 
 def get_user_service() -> UserService:
+    """Dependency to get the user service."""
     return UserService()
 
 
 @router.post("/register")
 async def register(
     new_user: RegisterRequest, user_service: UserService = Depends(get_user_service)
-):
+) -> Dict[str, Any]:
+    """Register a new user."""
     try:
-        new_user = user_service.save(new_user)
-
+        created_user = user_service.save(new_user)
+        return created_user.model_dump()
     except IntegrityError as error:
         if isinstance(error.orig, UniqueViolation):
             raise HTTPException(
                 status_code=400, detail="Ya existe un usuario con ese correo."
             )
-
-    return new_user
+        raise HTTPException(status_code=500, detail=f"Database error: {str(error)}")
 
 
 @router.post("/login")
 async def login(
     user: LoginRequest, user_service: UserService = Depends(get_user_service)
-):
+) -> Dict[str, str]:
+    """Authenticate a user and return an access token."""
     authenticated_user = authenticate_user(user.email, user.password, user_service)
     if not authenticated_user:
         raise HTTPException(
@@ -51,14 +55,21 @@ async def login(
 
 
 @router.get("/google/login")
-async def google_login(request: Request):
-    return await oauth.google.authorize_redirect(request, settings.google_redirect_uri)
+async def google_login(request: Request) -> Dict[str, Any]:
+    """Redirect to Google OAuth login."""
+    redirect_uri = settings.google_redirect_uri
+    if not redirect_uri:
+        raise HTTPException(
+            status_code=500, detail="Google redirect URI not configured"
+        )
+    return await oauth.google.authorize_redirect(request, redirect_uri)
 
 
 @router.get("/google/callback")
 async def google_auth(
     request: Request, user_service: UserService = Depends(get_user_service)
-):
+) -> Dict[str, str]:
+    """Handle Google OAuth callback and authenticate the user."""
     try:
         user_response = await oauth.google.authorize_access_token(request)
     except OAuthError:

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Any, Dict, List
 
 from sqlalchemy import desc, func
 
@@ -16,20 +16,24 @@ from src.repositories.order_detail import OrderDetailRepository
 
 
 class ReportService:
+    """Service for generating business reports."""
+
     def __init__(self):
+        """Initialize the report service with repositories."""
         self.order_repository = OrderRepository()
         self.order_detail_repository = OrderDetailRepository()
         self.invoice_repository = InvoiceRepository()
 
     def get_top_products(
         self, start_date: datetime, end_date: datetime, limit: int = 10
-    ) -> List[Dict]:
-        """Get top products by sales in a date range"""
+    ) -> List[Dict[str, Any]]:
+        """Get top products by sales in a date range."""
         with self.order_detail_repository.session_scope() as session:
             results = (
                 session.query(
                     OrderDetailModel.manufactured_item_id,
                     func.sum(OrderDetailModel.quantity).label("total_quantity"),
+                    func.sum(OrderDetailModel.subtotal).label("total_revenue"),
                 )
                 .join(OrderModel)
                 .filter(
@@ -46,21 +50,27 @@ class ReportService:
             top_products = []
             for result in results:
                 manufactured_item = session.query(ManufacturedItemModel).get(result[0])
-                top_products.append(
-                    {
-                        "id": manufactured_item.id_key,
-                        "name": manufactured_item.name,
-                        "quantity": result[1],
-                        "category": manufactured_item.category.name,
-                    }
-                )
+                if manufactured_item:
+                    top_products.append(
+                        {
+                            "id": manufactured_item.id_key,
+                            "name": manufactured_item.name,
+                            "quantity": result[1],
+                            "revenue": result[2],
+                            "category": (
+                                manufactured_item.category.name
+                                if manufactured_item.category
+                                else "Unknown"
+                            ),
+                        }
+                    )
 
             return top_products
 
     def get_top_customers(
         self, start_date: datetime, end_date: datetime, limit: int = 10
-    ) -> List[Dict]:
-        """Get top customers by order count in a date range"""
+    ) -> List[Dict[str, Any]]:
+        """Get top customers by order count in a date range."""
         with self.order_repository.session_scope() as session:
             results = (
                 session.query(
@@ -82,22 +92,24 @@ class ReportService:
             top_customers = []
             for result in results:
                 user = session.query(UserModel).get(result[0])
-                top_customers.append(
-                    {
-                        "id": user.id_key,
-                        "name": user.full_name,
-                        "email": user.email,
-                        "order_count": result[1],
-                        "total_amount": result[2],
-                    }
-                )
+                if user:
+                    top_customers.append(
+                        {
+                            "id": user.id_key,
+                            "name": user.full_name,
+                            "email": user.email,
+                            "order_count": result[1],
+                            "total_amount": result[2],
+                        }
+                    )
 
             return top_customers
 
-    def get_revenue_by_period(self, start_date: datetime, end_date: datetime) -> Dict:
-        """Get revenue, costs and profit in a date range"""
+    def get_revenue_by_period(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
+        """Get revenue, costs and profit in a date range."""
         with self.invoice_repository.session_scope() as session:
-            # Get total revenue (invoices minus credit notes)
             revenue_results = (
                 session.query(func.sum(InvoiceModel.total).label("total_revenue"))
                 .filter(
@@ -118,7 +130,6 @@ class ReportService:
                 .first()
             )
 
-            # Calculate costs (based on ingredients used in orders)
             costs_results = (
                 session.query(
                     func.sum(
@@ -128,9 +139,21 @@ class ReportService:
                     ).label("total_costs")
                 )
                 .join(OrderModel)
-                .join(ManufacturedItemModel)
-                .join(ManufacturedItemDetailModel)
-                .join(InventoryItemModel)
+                .join(
+                    ManufacturedItemModel,
+                    ManufacturedItemModel.id_key
+                    == OrderDetailModel.manufactured_item_id,
+                )
+                .join(
+                    ManufacturedItemDetailModel,
+                    ManufacturedItemDetailModel.manufactured_item_id
+                    == ManufacturedItemModel.id_key,
+                )
+                .join(
+                    InventoryItemModel,
+                    InventoryItemModel.id_key
+                    == ManufacturedItemDetailModel.inventory_item_id,
+                )
                 .filter(
                     OrderModel.date >= start_date,
                     OrderModel.date <= end_date,
@@ -139,26 +162,27 @@ class ReportService:
                 .first()
             )
 
-            # Calculate totals
             total_revenue = revenue_results[0] or 0
             total_credit_notes = credit_note_results[0] or 0
             total_costs = costs_results[0] or 0
 
             net_revenue = total_revenue - total_credit_notes
             profit = net_revenue - total_costs
+            profit_margin = (profit / net_revenue * 100) if net_revenue > 0 else 0
 
             return {
                 "revenue": net_revenue,
                 "costs": total_costs,
                 "profit": profit,
+                "profit_margin_percentage": profit_margin,
                 "start_date": start_date,
                 "end_date": end_date,
             }
 
     def get_orders_by_customer(
         self, user_id: int, start_date: datetime, end_date: datetime
-    ) -> List[Dict]:
-        """Get all orders for a customer in a date range"""
+    ) -> List[Dict[str, Any]]:
+        """Get all orders for a customer in a date range."""
         with self.order_repository.session_scope() as session:
             orders = (
                 session.query(OrderModel)
@@ -187,9 +211,13 @@ class ReportService:
                         "id": order.id_key,
                         "date": order.date,
                         "total": order.final_total,
-                        "status": order.status.value,
+                        "status": order.status.value if order.status else None,
                         "invoice_number": invoice.number if invoice else None,
                         "invoice_id": invoice.id_key if invoice else None,
+                        "payment_method": (
+                            order.payment_method.value if order.payment_method else None
+                        ),
+                        "is_paid": order.is_paid,
                     }
                 )
 

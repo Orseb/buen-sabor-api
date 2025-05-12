@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Any, Dict, List, Optional, Union
 
 from fastapi import Depends, HTTPException, Request
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -11,14 +11,14 @@ from src.models.user import UserRole
 security = HTTPBearer()
 
 
-def validate_token(credentials: HTTPAuthorizationCredentials = Depends(security)):
-    """
-    Validates the JWT token and returns the decoded payload
-    """
+def validate_token(
+    credentials: HTTPAuthorizationCredentials = Depends(security),
+) -> Dict[str, Any]:
+    """Validate a JWT token and return the decoded payload."""
     token = credentials.credentials
     try:
         payload = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.algorithm]
+            token, settings.secret_key or "", algorithms=[settings.algorithm or "HS256"]
         )
         return payload
     except JWTError:
@@ -29,13 +29,20 @@ def validate_token(credentials: HTTPAuthorizationCredentials = Depends(security)
         )
 
 
-def get_current_user(payload: dict = Depends(validate_token)):
-    """
-    Returns the current user from the JWT token payload
-    """
-    user_id = int(payload.get("sub"))
-    user_email = payload.get("email")
-    user_role = payload.get("role")
+def get_current_user(
+    payload: Dict[str, Any] = Depends(validate_token),
+) -> Dict[str, Any]:
+    """Extract the current user from the JWT token payload."""
+    try:
+        user_id = int(payload.get("sub"))
+        user_email = payload.get("email")
+        user_role = payload.get("role")
+    except (TypeError, ValueError):
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED,
+            detail="Invalid token payload",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
 
     if user_id is None or user_email is None or user_role is None:
         raise HTTPException(
@@ -48,13 +55,13 @@ def get_current_user(payload: dict = Depends(validate_token)):
 
 
 def has_role(allowed_roles: Union[List[UserRole], UserRole]):
-    """
-    Dependency that checks if the current user has one of the allowed roles
-    """
+    """Dependency that checks if the current user has one of the allowed roles."""
     if isinstance(allowed_roles, UserRole):
         allowed_roles = [allowed_roles]
 
-    async def role_checker(current_user: dict = Depends(get_current_user)):
+    async def role_checker(
+        current_user: Dict[str, Any] = Depends(get_current_user),
+    ) -> Dict[str, Any]:
         user_role = current_user.get("role")
 
         if user_role not in [role.value for role in allowed_roles]:
@@ -69,10 +76,8 @@ def has_role(allowed_roles: Union[List[UserRole], UserRole]):
     return role_checker
 
 
-def optional_auth(request: Request):
-    """
-    Optional authentication - doesn't raise an exception if no token is provided
-    """
+def optional_auth(request: Request) -> Optional[Dict[str, Any]]:
+    """Optional authentication"""
     auth_header = request.headers.get("Authorization")
     if not auth_header or not auth_header.startswith("Bearer "):
         return None
@@ -80,12 +85,12 @@ def optional_auth(request: Request):
     token = auth_header.replace("Bearer ", "")
     try:
         payload = jwt.decode(
-            token, settings.secret_key, algorithms=[settings.algorithm]
+            token, settings.secret_key or "", algorithms=[settings.algorithm or "HS256"]
         )
         return {
-            "id": payload.get("sub"),
+            "id": int(payload.get("sub", 0)),
             "email": payload.get("email"),
             "role": payload.get("role"),
         }
-    except JWTError:
+    except (JWTError, ValueError):
         return None

@@ -1,6 +1,6 @@
 import logging
 from contextlib import contextmanager
-from typing import List, Type
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
 
 from sqlalchemy.orm import Session
 
@@ -9,40 +9,45 @@ from src.models.base import BaseModel
 from src.repositories.base import BaseRepository
 from src.schemas.base import BaseSchema
 
+T = TypeVar("T", bound=BaseModel)
+S = TypeVar("S", bound=BaseSchema)
+
 
 class RecordNotFoundError(Exception):
-    """
-    RecordNotFoundError is raised when a record is not found
-    """
+    """Exception raised when a record is not found in the database."""
+
+    pass
 
 
-class BaseRepositoryImplementation(BaseRepository):
-    """
-    Class BaseRepositoryImpl implements BaseRepository
-    """
+class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
+    """Generic implementation of the BaseRepository interface."""
 
     def __init__(
         self,
-        model: Type[BaseModel],
+        model: Type[T],
         create_schema: Type[BaseSchema],
-        response_schema: Type[BaseSchema],
+        response_schema: Type[S],
     ):
+        """Initialize the repository with model and schema types."""
         self._model = model
         self._create_schema = create_schema
         self._response_schema = response_schema
-        self.logger = logging.getLogger(__name__)
+        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._session = Database().get_session()
 
     @property
     def session(self) -> Session:
+        """Get the SQLAlchemy session."""
         return self._session
 
     @property
-    def model(self) -> Type[BaseModel]:
+    def model(self) -> Type[T]:
+        """Get the SQLAlchemy model class."""
         return self._model
 
     @property
-    def schema(self) -> Type[BaseSchema]:
+    def schema(self) -> Type[S]:
+        """Get the Pydantic schema class for responses."""
         return self._response_schema
 
     @contextmanager
@@ -53,20 +58,22 @@ class BaseRepositoryImplementation(BaseRepository):
             yield session
             session.commit()
         except Exception as e:
-            self.logger.error("Session rollback because of error %s", e)
+            self.logger.error("Session rollback because of error: %s", str(e))
             session.rollback()
             raise
         finally:
             session.close()
 
-    def find(self, id_key: int) -> BaseSchema:
+    def find(self, id_key: int) -> S:
+        """Find a record by primary key."""
         with self.session_scope() as session:
             model = session.query(self.model).get(id_key)
             if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
-            return self.schema.model_validate(model)
+            return cast(S, self.schema.model_validate(model))
 
-    def find_by(self, field_name: str, field_value: any) -> bool | BaseSchema:
+    def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
+        """Find a record by a specific field value."""
         with self.session_scope() as session:
             model = (
                 session.query(self.model)
@@ -74,53 +81,53 @@ class BaseRepositoryImplementation(BaseRepository):
                 .first()
             )
             if model is None:
-                return False
-            return self.schema.model_validate(model)
+                return None
+            return cast(S, self.schema.model_validate(model))
 
-    def find_all(self) -> List[BaseSchema]:
+    def find_all(self) -> List[S]:
+        """Find all records."""
         with self.session_scope() as session:
             models = session.query(self.model).all()
-            schemas = []
-            for model in models:
-                schemas.append(self.schema.model_validate(model))
-            return schemas
+            return [cast(S, self.schema.model_validate(model)) for model in models]
 
-    def save(self, model: BaseModel) -> BaseSchema:
+    def save(self, model: T) -> S:
+        """Save a new record."""
         with self.session_scope() as session:
             session.add(model)
-            session.commit()
+            session.flush()  # Flush to get the ID without committing
             session.refresh(model)
-            return self.schema.model_validate(model)
+            return cast(S, self.schema.model_validate(model))
 
-    def update(self, id_key: int, changes: dict) -> BaseSchema:
+    def update(self, id_key: int, changes: Dict[str, Any]) -> S:
+        """Update an existing record."""
         with self.session_scope() as session:
-            # Filter the instance with the given id_key
             instance = (
                 session.query(self.model).filter(self.model.id_key == id_key).first()
             )
             if instance is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
-            # Update the instance with the new data
-            for key, value in changes.items():
-                if key in instance.__dict__ and value is not None:
-                    setattr(instance, key, value)
-            session.commit()
-            session.refresh(instance)
-            # Retrieve the updated instance
-            # Validate the updated instance with the schema
-            schema = self.schema.model_validate(instance)
-        return schema
 
-    def remove(self, id_key: int) -> BaseSchema:
+            for key, value in changes.items():
+                if hasattr(instance, key) and value is not None:
+                    setattr(instance, key, value)
+
+            session.flush()
+            session.refresh(instance)
+            return cast(S, self.schema.model_validate(instance))
+
+    def remove(self, id_key: int) -> S:
+        """Delete a record by primary key."""
         with self.session_scope() as session:
             model = session.query(self.model).get(id_key)
             if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
-            schema = self.schema.model_validate(model)
+            schema = cast(S, self.schema.model_validate(model))
             session.delete(model)
             return schema
 
-    def save_all(self, models: List[BaseModel]) -> List[BaseSchema]:
+    def save_all(self, models: List[T]) -> List[S]:
+        """Save multiple records."""
         with self.session_scope() as session:
             session.add_all(models)
-            return [self.schema.model_validate(model) for model in models]
+            session.flush()
+            return [cast(S, self.schema.model_validate(model)) for model in models]

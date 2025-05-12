@@ -1,4 +1,4 @@
-from typing import List
+from typing import Any, Dict, List
 
 from fastapi import Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -14,8 +14,13 @@ from src.services.order import OrderService
 from src.utils.rbac import get_current_user, has_role
 
 
-class OrderController(BaseControllerImplementation):
+class OrderController(
+    BaseControllerImplementation[ResponseOrderSchema, CreateOrderSchema]
+):
+    """Controller for order endpoints."""
+
     def __init__(self):
+        """Initialize the order controller with service and schemas."""
         super().__init__(
             create_schema=CreateOrderSchema,
             response_schema=ResponseOrderSchema,
@@ -31,15 +36,38 @@ class OrderController(BaseControllerImplementation):
         self.invoice_service = InvoiceService()
         self.address_service = AddressService()
 
+        # Register additional routes
+        self._register_additional_routes()
+
+    def _register_additional_routes(self) -> None:
+        """Register additional routes for order operations."""
+
         @self.router.post("/generate", response_model=ResponseOrderSchema)
         async def create_order(
-            order: CreateOrderSchema, current_user: dict = Depends(get_current_user)
-        ):
+            order: CreateOrderSchema,
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ) -> ResponseOrderSchema:
+            """
+            Create a new order.
+
+            Args:
+                order: The order data
+                current_user: The current user
+
+            Returns:
+                The created order
+
+            Raises:
+                HTTPException: If validation fails
+            """
+            # Set user ID from authenticated user
             order.user_id = current_user["id"]
 
+            # Handle pickup orders
             if order.delivery_method == DeliveryMethod.pickup.value:
                 return self.service.save(order)
 
+            # Validate delivery orders
             if not order.address_id:
                 raise HTTPException(
                     status_code=400,
@@ -49,10 +77,10 @@ class OrderController(BaseControllerImplementation):
             if order.payment_method != PaymentMethod.mercado_pago.value:
                 raise HTTPException(
                     status_code=400,
-                    detail="Mercado Pago must be selected "
-                    "as the payment method in delivery.",
+                    detail="Mercado Pago must be selected as the payment method in delivery.",
                 )
 
+            # Verify address belongs to user
             user_addresses = self.address_service.get_user_addresses(order.user_id)
             if not any(addr.id_key == order.address_id for addr in user_addresses):
                 raise HTTPException(
@@ -65,16 +93,19 @@ class OrderController(BaseControllerImplementation):
         @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
         async def get_by_status(
             status: OrderStatus,
-            current_user: dict = Depends(
+            current_user: Dict[str, Any] = Depends(
                 has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
             ),
-        ):
+        ) -> List[ResponseOrderSchema]:
+            """Get orders by status."""
             return self.service.get_by_status(status)
 
         @self.router.get("/user/{user_id}", response_model=List[ResponseOrderSchema])
         async def get_by_user(
-            user_id: int, current_user: dict = Depends(get_current_user)
-        ):
+            user_id: int, current_user: Dict[str, Any] = Depends(get_current_user)
+        ) -> List[ResponseOrderSchema]:
+            """Get orders by user."""
+
             if current_user and current_user.get("id") == user_id:
                 return self.service.get_by_user(user_id)
 
@@ -93,7 +124,7 @@ class OrderController(BaseControllerImplementation):
         async def update_status(
             id_key: int,
             status: OrderStatus,
-            current_user: dict = Depends(
+            current_user: Dict[str, Any] = Depends(
                 has_role(
                     [
                         UserRole.administrador,
@@ -103,7 +134,9 @@ class OrderController(BaseControllerImplementation):
                     ]
                 )
             ),
-        ):
+        ) -> ResponseOrderSchema:
+            """Update order status."""
+
             if current_user["role"] == UserRole.cocinero.value:
                 allowed_statuses = [
                     OrderStatus.en_cocina.value,
@@ -112,8 +145,7 @@ class OrderController(BaseControllerImplementation):
                 if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"Cook can only update status to: "
-                        f"{[s for s in allowed_statuses]}",
+                        detail=f"Cook can only update status to: {allowed_statuses}",
                     )
             elif current_user["role"] == UserRole.delivery.value:
                 allowed_statuses = [
@@ -123,9 +155,9 @@ class OrderController(BaseControllerImplementation):
                 if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"Delivery can only update status to: "
-                        f"{[s for s in allowed_statuses]}",
+                        detail=f"Delivery can only update status to: {allowed_statuses}",
                     )
+
             try:
                 return self.service.update_status(id_key, status)
             except RecordNotFoundError as error:
@@ -138,10 +170,11 @@ class OrderController(BaseControllerImplementation):
         @self.router.put("/{id_key}/cash-payment", response_model=ResponseOrderSchema)
         async def process_cash_payment(
             id_key: int,
-            current_user: dict = Depends(
+            current_user: Dict[str, Any] = Depends(
                 has_role([UserRole.cajero, UserRole.administrador])
             ),
-        ):
+        ) -> ResponseOrderSchema:
+            """Process cash payment for an order."""
             try:
                 order = self.service.get_one(id_key)
             except RecordNotFoundError as error:
@@ -150,6 +183,7 @@ class OrderController(BaseControllerImplementation):
                 raise HTTPException(
                     status_code=500, detail="An unexpected database error occurred."
                 )
+
             if order.is_paid:
                 raise HTTPException(
                     status_code=403,
@@ -171,8 +205,9 @@ class OrderController(BaseControllerImplementation):
         @self.router.put("/{id_key}/mp-payment")
         async def process_mp_payment(
             id_key: int,
-            current_user: dict = Depends(get_current_user),
-        ):
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ) -> Dict[str, str]:
+            """Process Mercado Pago payment for an order."""
             try:
                 order = self.service.get_one(id_key)
             except RecordNotFoundError as error:
@@ -181,6 +216,7 @@ class OrderController(BaseControllerImplementation):
                 raise HTTPException(
                     status_code=500, detail="An unexpected database error occurred."
                 )
+
             if order.is_paid:
                 raise HTTPException(
                     status_code=403,

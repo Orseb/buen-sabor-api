@@ -1,4 +1,4 @@
-from typing import List, Optional, Type
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
 from fastapi import APIRouter, Depends, HTTPException
 from psycopg2.errors import UniqueViolation
@@ -11,44 +11,54 @@ from src.schemas.base import BaseSchema
 from src.services.base import BaseService
 from src.utils.rbac import has_role
 
+S = TypeVar("S", bound=BaseSchema)
+C = TypeVar("C", bound=BaseSchema)
 
-class BaseControllerImplementation(BaseController):
-    """Base controller implementation."""
+
+class BaseControllerImplementation(Generic[S, C], BaseController[S]):
+    """Generic implementation of the BaseController interface."""
 
     def __init__(
         self,
-        create_schema: Type[BaseSchema],
-        response_schema: Type[BaseSchema],
+        create_schema: Type[C],
+        response_schema: Type[S],
         service: BaseService,
         tags: Optional[List[str]] = None,
         required_roles: Optional[List[UserRole]] = None,
     ):
-        self.service = service
+        """Initialize the controller with service and schema types."""
+        self._service = service
         self.create_schema = create_schema
         self.response_schema = response_schema
-        self.router = APIRouter(tags=tags)
+        self.router = APIRouter(tags=tags or [])
 
-        # Default to admin-only if no roles specified
         if required_roles is None:
             required_roles = [UserRole.administrador]
 
-        # Role-based access control dependency
         role_dependency = has_role(required_roles)
 
-        @self.router.get("/", response_model=List[response_schema])
-        async def get_all(current_user: dict = Depends(role_dependency)):
+        self._register_routes(role_dependency)
+
+    def _register_routes(self, role_dependency: Any) -> None:
+        """Register standard CRUD routes with the router."""
+
+        @self.router.get("/", response_model=List[self.response_schema])
+        async def get_all(current_user: Dict[str, Any] = Depends(role_dependency)):
             return self.get_all()
 
-        @self.router.get("/{id_key}", response_model=response_schema)
-        async def get_one(id_key: int, current_user: dict = Depends(role_dependency)):
+        @self.router.get("/{id_key}", response_model=self.response_schema)
+        async def get_one(
+            id_key: int, current_user: Dict[str, Any] = Depends(role_dependency)
+        ):
             try:
                 return self.get_one(id_key)
             except RecordNotFoundError as error:
                 raise HTTPException(status_code=404, detail=str(error))
 
-        @self.router.post("/", response_model=response_schema)
+        @self.router.post("/", response_model=self.response_schema)
         async def save(
-            schema_in: create_schema, current_user: dict = Depends(role_dependency)
+            schema_in: self.create_schema,
+            current_user: Dict[str, Any] = Depends(role_dependency),
         ):
             try:
                 return self.save(schema_in)
@@ -58,14 +68,14 @@ class BaseControllerImplementation(BaseController):
                         status_code=400, detail="Unique constraint violated."
                     )
                 raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
+                    status_code=500, detail=f"Database error: {str(error)}"
                 )
 
-        @self.router.put("/{id_key}", response_model=response_schema)
+        @self.router.put("/{id_key}", response_model=self.response_schema)
         async def update(
             id_key: int,
-            schema_in: create_schema,
-            current_user: dict = Depends(role_dependency),
+            schema_in: self.create_schema,
+            current_user: Dict[str, Any] = Depends(role_dependency),
         ):
             try:
                 return self.update(id_key, schema_in)
@@ -77,11 +87,13 @@ class BaseControllerImplementation(BaseController):
                         status_code=400, detail="Unique constraint violated."
                     )
                 raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
+                    status_code=500, detail=f"Database error: {str(error)}"
                 )
 
         @self.router.delete("/{id_key}")
-        async def delete(id_key: int, current_user: dict = Depends(role_dependency)):
+        async def delete(
+            id_key: int, current_user: Dict[str, Any] = Depends(role_dependency)
+        ):
             try:
                 return self.delete(id_key)
             except RecordNotFoundError as error:
@@ -89,38 +101,38 @@ class BaseControllerImplementation(BaseController):
 
     @property
     def service(self) -> BaseService:
-        """Service to access database."""
+        """Get the service for business logic."""
         return self._service
 
     @property
-    def schema(self) -> Type[BaseSchema]:
-        """Pydantic Schema to validate data."""
+    def schema(self) -> Type[S]:
+        """Get the Pydantic schema class for responses."""
         return self.response_schema
 
-    def get_all(self) -> List[BaseSchema]:
-        """Get all data."""
+    def get_all(self) -> List[S]:
+        """Get all records."""
         return self.service.get_all()
 
-    def get_one(self, id_key: int) -> BaseSchema:
-        """Get one data."""
+    def get_one(self, id_key: int) -> S:
+        """Get a record by primary key."""
         return self.service.get_one(id_key)
 
-    def save(self, schema: BaseSchema) -> BaseSchema:
-        """Save data."""
+    def save(self, schema: C) -> S:
+        """Save a new record."""
         return self.service.save(schema)
 
-    def update(self, id_key: int, schema: BaseSchema) -> BaseSchema:
-        """Update data."""
+    def update(self, id_key: int, schema: C) -> S:
+        """Update an existing record."""
         return self.service.update(id_key, schema)
 
-    def delete(self, id_key: int) -> BaseSchema:
-        """Delete data."""
+    def delete(self, id_key: int) -> S:
+        """Delete a record by primary key."""
         return self.service.delete(id_key)
 
     @schema.setter
-    def schema(self, value):
+    def schema(self, value: Type[S]) -> None:
         self.response_schema = value
 
     @service.setter
-    def service(self, value):
+    def service(self, value: BaseService) -> None:
         self._service = value

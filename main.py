@@ -22,10 +22,17 @@ from src.controllers.province import ProvinceController
 from src.controllers.report import ReportController
 from src.controllers.user import UserController
 
+# Initialize database
 db = Database()
 
-app = FastAPI()
+# Create FastAPI application
+app = FastAPI(
+    title="El Buen Sabor API",
+    description="An API restaurant management system for El Buen Sabor.",
+    version="1.0.0",
+)
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -34,7 +41,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.add_middleware(SessionMiddleware, secret_key=settings.secret_key)
+# Add session middleware for OAuth
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=settings.secret_key or "default-secret-key-for-development-only",
+)
 
 app.include_router(health_check_controller, prefix="/health_check")
 app.include_router(auth_router, prefix="/auth")
@@ -55,3 +66,11 @@ app.include_router(ManufacturedItemController().router, prefix="/manufactured_it
 app.include_router(OrderController().router, prefix="/order")
 app.include_router(InvoiceController().router, prefix="/invoice")
 app.include_router(ReportController().router, prefix="/reports")
+
+
+# Add startup event to check database connection
+@app.on_event("startup")
+async def startup_event():
+    """Check database connection on startup."""
+    if not db.check_connection():
+        print("WARNING: Could not connect to database. Some features may not work.")
