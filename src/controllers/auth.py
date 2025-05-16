@@ -4,6 +4,7 @@ from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
 from psycopg2.errors import UniqueViolation  # noqa
 from sqlalchemy.exc import IntegrityError
+from starlette.responses import RedirectResponse
 from starlette.status import HTTP_401_UNAUTHORIZED
 
 from src.config.auth import oauth
@@ -68,7 +69,7 @@ async def google_login(request: Request) -> Dict[str, Any]:
 @router.get("/google/callback")
 async def google_auth(
     request: Request, user_service: UserService = Depends(get_user_service)
-) -> Dict[str, str]:
+) -> RedirectResponse:
     """Handle Google OAuth callback and authenticate the user."""
     try:
         user_response = await oauth.google.authorize_access_token(request)
@@ -83,4 +84,6 @@ async def google_auth(
     if not user:
         user = user_service.create_or_update_user_from_google_info(google_user)
 
-    return {"access_token": create_access_token(user.email, user.id_key, user.role)}
+    access_token = create_access_token(user.email, user.id_key, user.role)
+
+    return RedirectResponse(f"{settings.frontend_url}?access_token={access_token}")

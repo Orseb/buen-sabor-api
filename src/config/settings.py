@@ -24,6 +24,9 @@ class Settings(BaseSettings):
     # Mercado Pago
     prod_access_token: Optional[str] = None
 
+    # Frontend
+    frontend_url: Optional[str] = "http://localhost:8000/docs"
+
     class Config:
         env_file = ".env"
         case_sensitive = False
