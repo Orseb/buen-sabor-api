@@ -1,4 +1,5 @@
 from src.controllers.base_implementation import BaseControllerImplementation
+from src.models.user import UserRole
 from src.schemas.manufactured_item import (
     CreateManufacturedItemSchema,
     ResponseManufacturedItemSchema,
@@ -13,4 +14,11 @@ class ManufacturedItemController(BaseControllerImplementation):
             response_schema=ResponseManufacturedItemSchema,
             service=ManufacturedItemService(),
             tags=["Manufactured Item"],
+            required_roles=[
+                UserRole.administrador,
+                UserRole.cajero,
+                UserRole.delivery,
+                UserRole.cocinero,
+                UserRole.cliente,
+            ],
         )

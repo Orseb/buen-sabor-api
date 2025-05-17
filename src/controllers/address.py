@@ -5,7 +5,6 @@ from psycopg2.errors import UniqueViolation
 from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.models.user import UserRole
 from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.address import (
     CreateAddressSchema,
@@ -23,7 +22,6 @@ class AddressController(BaseControllerImplementation):
             response_schema=ResponseAddressSchema,
             service=AddressService(),
             tags=["Address"],
-            required_roles=[UserRole.administrador],
         )
 
         @self.router.get("/user/addresses", response_model=List[ResponseAddressSchema])
