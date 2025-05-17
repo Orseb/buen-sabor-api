@@ -40,3 +40,10 @@ class ReportController:
             end_date: datetime = Query(...),
         ):
             return self.service.get_orders_by_customer(user_id, start_date, end_date)
+
+        @self.router.get("/inventory-expenses")
+        async def get_inventory_expenses(
+            start_date: datetime = Query(...),
+            end_date: datetime = Query(...),
+        ):
+            return self.service.get_inventory_expenses(start_date, end_date)

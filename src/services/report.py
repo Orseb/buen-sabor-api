@@ -4,9 +4,9 @@ from typing import Any, Dict, List
 from sqlalchemy import desc, func
 
 from src.models.inventory_item import InventoryItemModel
+from src.models.inventory_purchase import InventoryPurchaseModel
 from src.models.invoice import InvoiceModel, InvoiceType
 from src.models.manufactured_item import ManufacturedItemModel
-from src.models.manufactured_item_detail import ManufacturedItemDetailModel
 from src.models.order import OrderModel
 from src.models.order_detail import OrderDetailModel
 from src.models.user import UserModel
@@ -130,49 +130,28 @@ class ReportService:
                 .first()
             )
 
-            costs_results = (
+            purchase_costs_results = (
                 session.query(
-                    func.sum(
-                        OrderDetailModel.quantity
-                        * ManufacturedItemDetailModel.quantity
-                        * InventoryItemModel.purchase_cost
-                    ).label("total_costs")
-                )
-                .join(OrderModel)
-                .join(
-                    ManufacturedItemModel,
-                    ManufacturedItemModel.id_key
-                    == OrderDetailModel.manufactured_item_id,
-                )
-                .join(
-                    ManufacturedItemDetailModel,
-                    ManufacturedItemDetailModel.manufactured_item_id
-                    == ManufacturedItemModel.id_key,
-                )
-                .join(
-                    InventoryItemModel,
-                    InventoryItemModel.id_key
-                    == ManufacturedItemDetailModel.inventory_item_id,
+                    func.sum(InventoryPurchaseModel.total_cost).label("purchase_costs")
                 )
                 .filter(
-                    OrderModel.date >= start_date,
-                    OrderModel.date <= end_date,
-                    OrderModel.status == "facturado",
+                    InventoryPurchaseModel.purchase_date >= start_date,
+                    InventoryPurchaseModel.purchase_date <= end_date,
                 )
                 .first()
             )
 
             total_revenue = revenue_results[0] or 0
             total_credit_notes = credit_note_results[0] or 0
-            total_costs = costs_results[0] or 0
+            total_expenses = purchase_costs_results[0] or 0
 
             net_revenue = total_revenue - total_credit_notes
-            profit = net_revenue - total_costs
+            profit = net_revenue - total_expenses
             profit_margin = (profit / net_revenue * 100) if net_revenue > 0 else 0
 
             return {
                 "revenue": net_revenue,
-                "costs": total_costs,
+                "total_expenses": total_expenses,
                 "profit": profit,
                 "profit_margin_percentage": profit_margin,
                 "start_date": start_date,
@@ -222,3 +201,61 @@ class ReportService:
                 )
 
             return result
+
+    def get_inventory_expenses(
+        self, start_date: datetime, end_date: datetime
+    ) -> Dict[str, Any]:
+        """Get inventory purchase expenses in a date range."""
+        with self.invoice_repository.session_scope() as session:
+            purchase_results = (
+                session.query(
+                    func.sum(InventoryPurchaseModel.total_cost).label("total_cost"),
+                    func.count(InventoryPurchaseModel.id_key).label("purchase_count"),
+                )
+                .filter(
+                    InventoryPurchaseModel.purchase_date >= start_date,
+                    InventoryPurchaseModel.purchase_date <= end_date,
+                )
+                .first()
+            )
+
+            # Get top purchased items
+            top_items_results = (
+                session.query(
+                    InventoryPurchaseModel.inventory_item_id,
+                    func.sum(InventoryPurchaseModel.quantity).label("total_quantity"),
+                    func.sum(InventoryPurchaseModel.total_cost).label("total_cost"),
+                )
+                .filter(
+                    InventoryPurchaseModel.purchase_date >= start_date,
+                    InventoryPurchaseModel.purchase_date <= end_date,
+                )
+                .group_by(InventoryPurchaseModel.inventory_item_id)
+                .order_by(desc("total_cost"))
+                .limit(5)
+                .all()
+            )
+
+            top_items = []
+            for result in top_items_results:
+                inventory_item = session.query(InventoryItemModel).get(result[0])
+                if inventory_item:
+                    top_items.append(
+                        {
+                            "id": inventory_item.id_key,
+                            "name": inventory_item.name,
+                            "quantity": result[1],
+                            "total_cost": result[2],
+                        }
+                    )
+
+            total_cost = purchase_results[0] or 0
+            purchase_count = purchase_results[1] or 0
+
+            return {
+                "total_expenses": total_cost,
+                "purchase_count": purchase_count,
+                "top_purchased_items": top_items,
+                "start_date": start_date,
+                "end_date": end_date,
+            }

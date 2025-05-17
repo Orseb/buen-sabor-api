@@ -10,6 +10,7 @@ from src.controllers.country import CountryController
 from src.controllers.health_check import router as health_check_controller
 from src.controllers.inventory_item import InventoryItemController
 from src.controllers.inventory_item_category import InventoryItemCategoryController
+from src.controllers.inventory_purchase import InventoryPurchaseController
 from src.controllers.invoice import InvoiceController
 from src.controllers.locality import LocalityController
 from src.controllers.manufactured_item import ManufacturedItemController
@@ -61,6 +62,7 @@ app.include_router(
     InventoryItemCategoryController().router, prefix="/inventory_item_category"
 )
 app.include_router(InventoryItemController().router, prefix="/inventory_item")
+app.include_router(InventoryPurchaseController().router, prefix="/inventory_purchase")
 app.include_router(UserController().router, prefix="/user")
 app.include_router(ManufacturedItemController().router, prefix="/manufactured_item")
 app.include_router(OrderController().router, prefix="/order")

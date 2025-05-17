@@ -36,3 +36,6 @@ class InventoryItemModel(BaseModel):
     manufactured_item_details = relationship(
         "ManufacturedItemDetailModel", back_populates="inventory_item"
     )
+
+    # Add this relationship to link to purchases
+    purchases = relationship("InventoryPurchaseModel", back_populates="inventory_item")
