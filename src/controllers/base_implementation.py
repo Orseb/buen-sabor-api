@@ -42,13 +42,15 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
     def _register_routes(self, role_dependency: Any) -> None:
         """Register standard CRUD routes with the router."""
 
+        from src.utils.rbac import get_current_user
+
         @self.router.get("/", response_model=List[self.response_schema])
-        async def get_all(current_user: Dict[str, Any] = Depends(role_dependency)):
+        async def get_all(current_user: Dict[str, Any] = Depends(get_current_user)):
             return self.get_all()
 
         @self.router.get("/{id_key}", response_model=self.response_schema)
         async def get_one(
-            id_key: int, current_user: Dict[str, Any] = Depends(role_dependency)
+            id_key: int, current_user: Dict[str, Any] = Depends(get_current_user)
         ):
             try:
                 return self.get_one(id_key)
