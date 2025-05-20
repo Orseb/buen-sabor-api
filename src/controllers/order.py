@@ -231,4 +231,4 @@ class OrderController(
 
             preference_id = self.service.process_mp_payment(order)
 
-            return {"preference_id": preference_id}
+            return {"payment_url": preference_id}

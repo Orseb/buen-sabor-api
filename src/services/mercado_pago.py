@@ -4,7 +4,7 @@ from src.config.mercado_pago import sdk
 from src.schemas.order import ResponseOrderSchema
 
 
-def create_mp_preference(order: ResponseOrderSchema) -> str:
+def create_mp_preference(order: ResponseOrderSchema) -> dict:
     """Create a Mercado Pago preference for an order."""
     items: List[Dict[str, Any]] = []
     for detail in order.details:
@@ -21,4 +21,7 @@ def create_mp_preference(order: ResponseOrderSchema) -> str:
 
     preference_response = sdk.preference().create({"items": items})
 
-    return preference_response["response"]["id"]
+    return {
+        "preference_id": preference_response["response"]["id"],
+        "payment_url": preference_response["response"]["init_point"],
+    }

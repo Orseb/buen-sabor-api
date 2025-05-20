@@ -129,10 +129,11 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
     def process_mp_payment(self, order: ResponseOrderSchema) -> str:
         """Process Mercado Pago payment for an order."""
-        preference_id = create_mp_preference(order)
+        payment_data = create_mp_preference(order)
 
         self.update(
-            order.id_key, {"payment_id": f"MP-{preference_id}", "is_paid": True}
+            order.id_key,
+            {"payment_id": f"MP-{payment_data['preference_id']}", "is_paid": True},
         )
 
-        return preference_id
+        return payment_data["payment_url"]
