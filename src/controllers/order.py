@@ -100,25 +100,12 @@ class OrderController(
             """Get orders by status."""
             return self.service.get_by_status(status)
 
-        @self.router.get("/user/{user_id}", response_model=List[ResponseOrderSchema])
+        @self.router.get("/user/token", response_model=List[ResponseOrderSchema])
         async def get_by_user(
-            user_id: int, current_user: Dict[str, Any] = Depends(get_current_user)
+            current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> List[ResponseOrderSchema]:
             """Get orders by user."""
-
-            if current_user and current_user.get("id") == user_id:
-                return self.service.get_by_user(user_id)
-
-            if current_user and current_user.get("role") not in [
-                UserRole.administrador.value,
-                UserRole.cajero.value,
-            ]:
-                raise HTTPException(
-                    status_code=403,
-                    detail="Not enough permissions to view other users' orders",
-                )
-
-            return self.service.get_by_user(user_id)
+            return self.service.get_by_user(current_user["id"])
 
         @self.router.put("/{id_key}/status", response_model=ResponseOrderSchema)
         async def update_status(
