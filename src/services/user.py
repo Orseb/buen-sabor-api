@@ -52,9 +52,8 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         with self.repository.session_scope() as session:
             employees = (
                 session.query(self.model)
-                .filter(
-                    self.model.role not in [UserRole.cliente, UserRole.administrador]
-                )
+                .filter(self.model.role != UserRole.cliente)
+                .filter(self.model.role != UserRole.administrador)
                 .filter(self.model.active)
                 .all()
             )
