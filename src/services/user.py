@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List, Optional
 
 from src.models.user import UserModel, UserRole
 from src.repositories.user import UserRepository
@@ -46,3 +46,16 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
     def get_by_google_sub(self, google_sub: str) -> Optional[ResponseUserSchema]:
         """Get a user by Google sub."""
         return self.get_one_by("google_sub", google_sub)
+
+    def get_employees(self) -> List[ResponseUserSchema]:
+        """Get all users with employee roles (not clients)."""
+        with self.repository.session_scope() as session:
+            employees = (
+                session.query(self.model)
+                .filter(
+                    self.model.role not in [UserRole.cliente, UserRole.administrador]
+                )
+                .filter(self.model.active)
+                .all()
+            )
+            return [self.schema.model_validate(employee) for employee in employees]
