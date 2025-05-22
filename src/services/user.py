@@ -59,3 +59,14 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
                 .all()
             )
             return [self.schema.model_validate(employee) for employee in employees]
+
+    def get_clients(self) -> List[ResponseUserSchema]:
+        """Get all users with client roles."""
+        with self.repository.session_scope() as session:
+            clients = (
+                session.query(self.model)
+                .filter(self.model.role == UserRole.cliente)
+                .filter(self.model.active)
+                .all()
+            )
+            return [self.schema.model_validate(client) for client in clients]

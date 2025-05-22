@@ -24,3 +24,10 @@ class UserController(BaseControllerImplementation):
         ):
             """Get all employees (users with non-client roles)."""
             return self.service.get_employees()
+
+        @self.router.get("/clients/all", response_model=List[ResponseUserSchema])
+        async def get_clients(
+            current_user: dict = Depends(has_role([UserRole.administrador])),
+        ):
+            """Get all clients (users with client roles)."""
+            return self.service.get_clients()
