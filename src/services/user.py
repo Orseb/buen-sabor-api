@@ -54,7 +54,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
                 session.query(self.model)
                 .filter(self.model.role != UserRole.cliente)
                 .filter(self.model.role != UserRole.administrador)
-                .filter(self.model.active)
+                .filter(self.model.active.is_(True))
                 .all()
             )
             return [self.schema.model_validate(employee) for employee in employees]
@@ -65,7 +65,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
             clients = (
                 session.query(self.model)
                 .filter(self.model.role == UserRole.cliente)
-                .filter(self.model.active)
+                .filter(self.model.active.is_(True))
                 .all()
             )
             return [self.schema.model_validate(client) for client in clients]
