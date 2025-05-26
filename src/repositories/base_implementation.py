@@ -64,13 +64,11 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         finally:
             session.close()
 
-    def find(self, id_key: int) -> S:
-        """Find a record by primary key."""
+    def find(self, offset: int = 0, limit: int = 10) -> List[S]:
+        """Find records."""
         with self.session_scope() as session:
-            model = session.query(self.model).get(id_key)
-            if model is None:
-                raise RecordNotFoundError(f"No record found with id {id_key}")
-            return cast(S, self.schema.model_validate(model))
+            models = session.query(self.model).offset(offset).limit(limit).all()
+            return [cast(S, self.schema.model_validate(model)) for model in models]
 
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
         """Find a record by a specific field value."""

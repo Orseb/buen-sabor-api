@@ -40,9 +40,9 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         """Get the SQLAlchemy model class."""
         return self._model
 
-    def get_all(self) -> List[S]:
+    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Get all records."""
-        return self.repository.find_all()
+        return self.repository.find(offset, limit)
 
     def get_one(self, id_key: int) -> S:
         """Get a record by primary key."""

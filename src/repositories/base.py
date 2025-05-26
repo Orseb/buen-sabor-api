@@ -36,8 +36,8 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def find(self, id_key: int) -> S:
-        """Find a record by primary key."""
+    def find(self, offset: int = 0, limit: int = 10) -> List[S]:
+        """Find records."""
         pass
 
     @abstractmethod

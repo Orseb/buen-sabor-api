@@ -45,8 +45,12 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         from src.utils.rbac import get_current_user
 
         @self.router.get("/", response_model=List[self.response_schema])
-        async def get_all(current_user: Dict[str, Any] = Depends(get_current_user)):
-            return self.get_all()
+        async def get_all(
+            offset: int = 0,
+            limit: int = 10,
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ):
+            return self.get_all(offset, limit)
 
         @self.router.get("/{id_key}", response_model=self.response_schema)
         async def get_one(
@@ -111,9 +115,9 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         """Get the Pydantic schema class for responses."""
         return self.response_schema
 
-    def get_all(self) -> List[S]:
-        """Get all records."""
-        return self.service.get_all()
+    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
+        """Get all records paginated."""
+        return self.service.get_all(offset, limit)
 
     def get_one(self, id_key: int) -> S:
         """Get a record by primary key."""

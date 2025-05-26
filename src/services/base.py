@@ -31,7 +31,7 @@ class BaseService(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def get_all(self) -> List[S]:
+    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Get all records."""
         pass
 
