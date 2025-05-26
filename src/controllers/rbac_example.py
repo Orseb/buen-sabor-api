@@ -48,7 +48,7 @@ async def staff_only_endpoint(
     )
 ):
     """
-    Endpoint accessible to staff members (admin, cashier, cook)
+    Endpoint accessible to staff members
     """
     return {
         "message": "This is a staff-only endpoint",

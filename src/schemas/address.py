@@ -8,7 +8,7 @@ class BaseAddressSchema(BaseSchema):
     street: str
     street_number: int
     zip_code: str
-    name: str  # Name for the address (e.g., "Home", "Work")
+    name: str
 
 
 class CreateAddressSchema(BaseAddressSchema):

@@ -123,7 +123,6 @@ class OrderController(
             ),
         ) -> ResponseOrderSchema:
             """Update order status."""
-
             if current_user["role"] == UserRole.cocinero.value:
                 allowed_statuses = [
                     OrderStatus.en_cocina.value,

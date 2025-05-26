@@ -10,7 +10,7 @@ class AddressModel(BaseModel):
     street = Column(String, nullable=False)
     street_number = Column(Integer, nullable=False)
     zip_code = Column(String, nullable=False)
-    name = Column(String, nullable=False)  # Name for the address (e.g., "Home", "Work")
+    name = Column(String, nullable=False)
 
     locality_id = Column(
         Integer,

@@ -94,7 +94,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         """Save a new record."""
         with self.session_scope() as session:
             session.add(model)
-            session.flush()  # Flush to get the ID without committing
+            session.flush()
             session.refresh(model)
             return cast(S, self.schema.model_validate(model))
 

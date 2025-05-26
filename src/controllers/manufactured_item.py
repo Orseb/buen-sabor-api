@@ -1,10 +1,12 @@
+from fastapi import Depends
+
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.models.user import UserRole
 from src.schemas.manufactured_item import (
     CreateManufacturedItemSchema,
     ResponseManufacturedItemSchema,
 )
 from src.services.manufactured_item import ManufacturedItemService
+from src.utils.rbac import get_current_user
 
 
 class ManufacturedItemController(BaseControllerImplementation):
@@ -14,11 +16,5 @@ class ManufacturedItemController(BaseControllerImplementation):
             response_schema=ResponseManufacturedItemSchema,
             service=ManufacturedItemService(),
             tags=["Manufactured Item"],
-            required_roles=[
-                UserRole.administrador,
-                UserRole.cajero,
-                UserRole.delivery,
-                UserRole.cocinero,
-                UserRole.cliente,
-            ],
+            required_roles=Depends(get_current_user),
         )
