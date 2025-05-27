@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Boolean, Column, Enum, String
+from sqlalchemy import Column, Enum, String
 from sqlalchemy.orm import relationship
 
 from src.models.base import BaseModel
@@ -23,6 +23,5 @@ class UserModel(BaseModel):
     password = Column(String)
     role = Column(Enum(UserRole), nullable=False)
     google_sub = Column(String)
-    active = Column(Boolean, nullable=False)
     addresses = relationship("AddressModel", back_populates="user")
     orders = relationship("OrderModel", back_populates="user")

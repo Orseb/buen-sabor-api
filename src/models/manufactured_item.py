@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, Float, ForeignKey, Integer, String
+from sqlalchemy import Column, Float, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from src.models.base import BaseModel
@@ -13,7 +13,6 @@ class ManufacturedItemModel(BaseModel):
     price = Column(Float, nullable=False)
     image_url = Column(String)
     recipe = Column(String)
-    active = Column(Boolean, nullable=False)
 
     category_id = Column(
         Integer,

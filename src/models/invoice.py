@@ -28,7 +28,6 @@ class InvoiceModel(BaseModel):
     )
     order = relationship("OrderModel", back_populates="invoice")
 
-    # For credit notes, reference to the original invoice
     original_invoice_id = Column(
         Integer,
         ForeignKey("invoice.id_key", ondelete="CASCADE"),

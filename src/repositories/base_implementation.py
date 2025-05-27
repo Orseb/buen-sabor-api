@@ -64,11 +64,15 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         finally:
             session.close()
 
-    def find(self, offset: int = 0, limit: int = 10) -> List[S]:
-        """Find records."""
+    def find(self, id_key: int) -> S:
+        """Find record with id_key."""
         with self.session_scope() as session:
-            models = session.query(self.model).offset(offset).limit(limit).all()
-            return [cast(S, self.schema.model_validate(model)) for model in models]
+            model = (
+                session.query(self.model).filter_by(id_key=id_key, active=True).first()
+            )
+            if model is None:
+                raise RecordNotFoundError(f"No record found with id {id_key}")
+            return cast(S, self.schema.model_validate(model))
 
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
         """Find a record by a specific field value."""
@@ -82,10 +86,16 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
                 return None
             return cast(S, self.schema.model_validate(model))
 
-    def find_all(self) -> List[S]:
+    def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Find all records."""
         with self.session_scope() as session:
-            models = session.query(self.model).all()
+            models = (
+                session.query(self.model)
+                .filter_by(active=True)
+                .offset(offset)
+                .limit(limit)
+                .all()
+            )
             return [cast(S, self.schema.model_validate(model)) for model in models]
 
     def save(self, model: T) -> S:
@@ -119,9 +129,9 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             model = session.query(self.model).get(id_key)
             if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
-            schema = cast(S, self.schema.model_validate(model))
-            session.delete(model)
-            return schema
+            model.active = False
+            session.add(model)
+            return cast(S, self.schema.model_validate(model))
 
     def save_all(self, models: List[T]) -> List[S]:
         """Save multiple records."""

@@ -12,7 +12,6 @@ class InventoryItemModel(BaseModel):
     minimum_stock = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     purchase_cost = Column(Float, nullable=False)
-    active = Column(Boolean, nullable=False)
     is_ingredient = Column(Boolean, nullable=False)
 
     measurement_unit_id = Column(
