@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     # Frontend
     frontend_url: Optional[str] = "http://localhost:8000/docs"
 
+    # Cloudinary
+    cloudinary_api_key: Optional[str] = None
+
     class Config:
         env_file = ".env"
         case_sensitive = False

@@ -8,6 +8,7 @@ from src.schemas.manufactured_item import (
 )
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
+from src.utils.cloudinary import upload_base64_image_to_cloudinary
 
 
 class ManufacturedItemService(BaseServiceImplementation):
@@ -27,6 +28,12 @@ class ManufacturedItemService(BaseServiceImplementation):
         """Save a manufactured item with its details"""
         details = schema.details
         schema.details = []
+
+        if schema.image_url:
+            schema.image_url = upload_base64_image_to_cloudinary(
+                schema.image_url, "manufactured_items"
+            )
+
         manufactured_item = super().save(schema)
 
         for detail in details:
