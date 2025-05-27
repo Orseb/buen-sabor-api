@@ -47,27 +47,12 @@ class OrderController(
             order: CreateOrderSchema,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> ResponseOrderSchema:
-            """
-            Create a new order.
-
-            Args:
-                order: The order data
-                current_user: The current user
-
-            Returns:
-                The created order
-
-            Raises:
-                HTTPException: If validation fails
-            """
-            # Set user ID from authenticated user
+            """Create a new order."""
             order.user_id = current_user["id"]
 
-            # Handle pickup orders
             if order.delivery_method == DeliveryMethod.pickup.value:
                 return self.service.save(order)
 
-            # Validate delivery orders
             if not order.address_id:
                 raise HTTPException(
                     status_code=400,
@@ -80,7 +65,6 @@ class OrderController(
                     detail="Mercado Pago must be selected as the payment method in delivery.",
                 )
 
-            # Verify address belongs to user
             user_addresses = self.address_service.get_user_addresses(order.user_id)
             if not any(addr.id_key == order.address_id for addr in user_addresses):
                 raise HTTPException(

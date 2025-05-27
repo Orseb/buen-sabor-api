@@ -1,8 +1,8 @@
 import logging
 from contextlib import contextmanager
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, cast
+from typing import Any, Dict, Generic, Iterator, List, Optional, Type, TypeVar
 
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 from src.config.database import Database
 from src.models.base import BaseModel
@@ -33,12 +33,13 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         self._create_schema = create_schema
         self._response_schema = response_schema
         self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
-        self._session = Database().get_session()
+        self._session_factory = scoped_session(sessionmaker(bind=Database().engine))
 
     @property
-    def session(self) -> Session:
-        """Get the SQLAlchemy session."""
-        return self._session
+    def session(self):
+        raise NotImplementedError(
+            "Direct session access is not supported. Use session_scope()."
+        )
 
     @property
     def model(self) -> Type[T]:
@@ -51,9 +52,9 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         return self._response_schema
 
     @contextmanager
-    def session_scope(self):
+    def session_scope(self) -> Iterator[Session]:
         """Provide a transactional scope around a series of operations."""
-        session = self.session
+        session: Session = self._session_factory()
         try:
             yield session
             session.commit()
@@ -67,12 +68,10 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
     def find(self, id_key: int) -> S:
         """Find record with id_key."""
         with self.session_scope() as session:
-            model = (
-                session.query(self.model).filter_by(id_key=id_key, active=True).first()
-            )
-            if model is None:
+            model = session.get(self.model, id_key)
+            if model is None or not getattr(model, "active", True):
                 raise RecordNotFoundError(f"No record found with id {id_key}")
-            return cast(S, self.schema.model_validate(model))
+            return self.schema.model_validate(model)
 
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
         """Find a record by a specific field value."""
@@ -80,11 +79,12 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             model = (
                 session.query(self.model)
                 .filter(getattr(self.model, field_name) == field_value)
+                .filter_by(active=True)
                 .first()
             )
             if model is None:
                 return None
-            return cast(S, self.schema.model_validate(model))
+            return self.schema.model_validate(model)
 
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Find all records."""
@@ -96,7 +96,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
                 .limit(limit)
                 .all()
             )
-            return [cast(S, self.schema.model_validate(model)) for model in models]
+            return [self.schema.model_validate(model) for model in models]
 
     def save(self, model: T) -> S:
         """Save a new record."""
@@ -104,38 +104,31 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             session.add(model)
             session.flush()
             session.refresh(model)
-            return cast(S, self.schema.model_validate(model))
+            return self.schema.model_validate(model)
 
     def update(self, id_key: int, changes: Dict[str, Any]) -> S:
         """Update an existing record."""
         with self.session_scope() as session:
-            instance = (
-                session.query(self.model).filter(self.model.id_key == id_key).first()
-            )
-            if instance is None:
+            model = session.get(self.model, id_key)
+            if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
 
             for key, value in changes.items():
-                if hasattr(instance, key) and value is not None:
-                    setattr(instance, key, value)
+                if hasattr(model, key) and value is not None:
+                    setattr(model, key, value)
 
             session.flush()
-            session.refresh(instance)
-            return cast(S, self.schema.model_validate(instance))
+            session.refresh(model)
+            return self.schema.model_validate(model)
 
     def remove(self, id_key: int) -> S:
-        """Delete a record by primary key."""
+        """Soft delete a record by primary key."""
         with self.session_scope() as session:
-            model = session.query(self.model).get(id_key)
+            model = session.get(self.model, id_key)
             if model is None:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
             model.active = False
             session.add(model)
-            return cast(S, self.schema.model_validate(model))
-
-    def save_all(self, models: List[T]) -> List[S]:
-        """Save multiple records."""
-        with self.session_scope() as session:
-            session.add_all(models)
             session.flush()
-            return [cast(S, self.schema.model_validate(model)) for model in models]
+            session.refresh(model)
+            return self.schema.model_validate(model)

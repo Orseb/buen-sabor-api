@@ -1,7 +1,3 @@
-"""
-Base repository interface defining standard data access methods.
-"""
-
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
@@ -36,8 +32,8 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def find(self, offset: int = 0, limit: int = 10) -> List[S]:
-        """Find records."""
+    def find(self, id_key: int) -> List[S]:
+        """Find record with id_key."""
         pass
 
     @abstractmethod
@@ -46,7 +42,7 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def find_all(self) -> List[S]:
+    def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Find all records."""
         pass
 
@@ -63,9 +59,4 @@ class BaseRepository(Generic[T, S], ABC):
     @abstractmethod
     def remove(self, id_key: int) -> S:
         """Delete a record by primary key."""
-        pass
-
-    @abstractmethod
-    def save_all(self, models: List[T]) -> List[S]:
-        """Save multiple records."""
         pass

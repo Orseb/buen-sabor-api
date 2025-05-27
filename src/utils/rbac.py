@@ -18,7 +18,7 @@ def validate_token(
     token = credentials.credentials
     try:
         payload = jwt.decode(
-            token, settings.secret_key or "", algorithms=[settings.algorithm or "HS256"]
+            token, settings.secret_key, algorithms=[settings.algorithm]
         )
         return payload
     except JWTError:
