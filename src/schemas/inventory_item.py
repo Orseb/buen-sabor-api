@@ -1,3 +1,5 @@
+from typing import Optional
+
 from src.schemas.base import BaseSchema
 from src.schemas.inventory_item_category import ResponseInventoryItemCategorySchema
 from src.schemas.measurement_unit import ResponseMeasurementUnitSchema
@@ -9,6 +11,7 @@ class BaseInventoryItemSchema(BaseSchema):
     minimum_stock: int
     price: float
     purchase_cost: float
+    image_url: Optional[str] = None
     active: bool = True
     is_ingredient: bool = True
 

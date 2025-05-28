@@ -1,9 +1,15 @@
+from typing import Any, Dict
+
+from fastapi import Depends, HTTPException
+
 from src.controllers.base_implementation import BaseControllerImplementation
+from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.inventory_item import (
     CreateInventoryItemSchema,
     ResponseInventoryItemSchema,
 )
 from src.services.inventory_item import InventoryItemService
+from src.utils.rbac import get_current_user
 
 
 class InventoryItemController(BaseControllerImplementation):
@@ -14,3 +20,14 @@ class InventoryItemController(BaseControllerImplementation):
             service=InventoryItemService(),
             tags=["Inventory Item"],
         )
+
+        @self.router.put("/{id_key}/image", response_model=ResponseInventoryItemSchema)
+        def update_inventory_item_image(
+            id_key: int,
+            image_base64: str,
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ):
+            try:
+                return self.service.update_image(id_key, image_base64)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))
