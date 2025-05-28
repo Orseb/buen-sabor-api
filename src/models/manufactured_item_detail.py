@@ -12,7 +12,6 @@ class ManufacturedItemDetailModel(BaseModel):
     manufactured_item_id = Column(
         Integer,
         ForeignKey("manufactured_item.id_key", ondelete="CASCADE"),
-        nullable=False,
     )
     manufactured_item = relationship("ManufacturedItemModel", back_populates="details")
 
