@@ -86,6 +86,17 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
                 return None
             return self.schema.model_validate(model)
 
+    def find_all_by(self, field_name: str, field_value: Any) -> List[S]:
+        """Find all records by a specific field value."""
+        with self.session_scope() as session:
+            models = (
+                session.query(self.model)
+                .filter(getattr(self.model, field_name) == field_value)
+                .filter_by(active=True)
+                .all()
+            )
+            return [self.schema.model_validate(model) for model in models]
+
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Find all records."""
         with self.session_scope() as session:

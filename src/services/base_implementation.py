@@ -52,6 +52,10 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         """Get a record by a specific field value."""
         return self.repository.find_by(field_name, field_value)
 
+    def get_all_by(self, field_name: str, field_value: Any) -> List[S]:
+        """Get all records by a specific field value."""
+        return self.repository.find_all_by(field_name, field_value)
+
     def save(self, schema: Any) -> S:
         """Save a new record."""
         model_instance = self.to_model(schema)

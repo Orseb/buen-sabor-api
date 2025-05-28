@@ -1,4 +1,4 @@
-from typing import Any, Dict
+from typing import Any, Dict, List
 
 from fastapi import Depends, HTTPException
 
@@ -20,6 +20,14 @@ class InventoryItemController(BaseControllerImplementation):
             service=InventoryItemService(),
             tags=["Inventory Item"],
         )
+
+        @self.router.get(
+            "/products/all", response_model=List[ResponseInventoryItemSchema]
+        )
+        def get_product_inventory_items(
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ):
+            return self.service.get_all_by("is_ingredient", False)
 
         @self.router.put("/{id_key}/image", response_model=ResponseInventoryItemSchema)
         def update_inventory_item_image(

@@ -46,6 +46,11 @@ class BaseService(Generic[T, S], ABC):
         pass
 
     @abstractmethod
+    def get_all_by(self, field_name: str, field_value: Any) -> List[S]:
+        """Get all records by a specific field value."""
+        pass
+
+    @abstractmethod
     def save(self, schema: Any) -> S:
         """Save a new record."""
         pass

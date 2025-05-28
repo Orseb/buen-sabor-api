@@ -32,13 +32,18 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def find(self, id_key: int) -> List[S]:
+    def find(self, id_key: int) -> S:
         """Find record with id_key."""
         pass
 
     @abstractmethod
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
         """Find a record by a specific field value."""
+        pass
+
+    @abstractmethod
+    def find_all_by(self, field_name: str, field_value: Any) -> List[S]:
+        """Find all records by a specific field value."""
         pass
 
     @abstractmethod
