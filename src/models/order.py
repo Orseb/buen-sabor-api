@@ -14,6 +14,7 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from src.models.base import BaseModel
+from src.models.order_inventory_detail import OrderInventoryDetailModel  # noqa
 
 
 class OrderStatus(enum.Enum):
@@ -43,10 +44,10 @@ class OrderModel(BaseModel):
     discount = Column(Float, default=0.0)
     final_total = Column(Float, nullable=False)
     status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.a_confirmar)
-    estimated_time = Column(Integer)  # in minutes
+    estimated_time = Column(Integer)
     delivery_method = Column(Enum(DeliveryMethod), nullable=False)
     payment_method = Column(Enum(PaymentMethod), nullable=False)
-    payment_id = Column(String)  # For Mercado Pago payment ID
+    payment_id = Column(String)
     is_paid = Column(Boolean, default=False)
     notes = Column(String)
 
@@ -65,4 +66,7 @@ class OrderModel(BaseModel):
     address = relationship("AddressModel", back_populates="orders")
 
     details = relationship("OrderDetailModel", back_populates="order")
+    inventory_details = relationship(
+        "OrderInventoryDetailModel", back_populates="order"
+    )
     invoice = relationship("InvoiceModel", back_populates="order", uselist=False)
