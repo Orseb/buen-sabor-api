@@ -36,12 +36,6 @@ class OrderController(
         self.invoice_service = InvoiceService()
         self.address_service = AddressService()
 
-        # Register additional routes
-        self._register_additional_routes()
-
-    def _register_additional_routes(self) -> None:
-        """Register additional routes for order operations."""
-
         @self.router.post("/generate", response_model=ResponseOrderSchema)
         async def create_order(
             order: CreateOrderSchema,

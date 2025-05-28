@@ -5,6 +5,7 @@ from src.repositories.user import UserRepository
 from src.schemas.auth import GoogleUser
 from src.schemas.user import CreateUserSchema, ResponseUserSchema
 from src.services.base_implementation import BaseServiceImplementation
+from src.utils.cloudinary import upload_base64_image_to_cloudinary
 
 
 class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
@@ -69,3 +70,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
                 .all()
             )
             return [self.schema.model_validate(client) for client in clients]
+
+    def update_image(self, id_key: int, base64_image: str) -> ResponseUserSchema:
+        image_url = upload_base64_image_to_cloudinary(base64_image, "users")
+        return self.repository.update(id_key, {"image_url": image_url})

@@ -25,9 +25,6 @@ class InventoryPurchaseController(BaseControllerImplementation):
             required_roles=[UserRole.administrador, UserRole.cajero],
         )
 
-        self._register_additional_routes()
-
-    def _register_additional_routes(self):
         @self.router.post(
             "/add-stock/{inventory_item_id}",
             response_model=ResponseInventoryPurchaseSchema,

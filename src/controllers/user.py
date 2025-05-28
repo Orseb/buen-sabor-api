@@ -1,12 +1,13 @@
-from typing import List
+from typing import Any, Dict, List
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
+from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.user import CreateUserSchema, ResponseUserSchema
 from src.services.user import UserService
-from src.utils.rbac import has_role
+from src.utils.rbac import get_current_user, has_role
 
 
 class UserController(BaseControllerImplementation):
@@ -31,3 +32,14 @@ class UserController(BaseControllerImplementation):
         ):
             """Get all clients (users with client roles)."""
             return self.service.get_clients()
+
+        @self.router.put("/{id_key}/image", response_model=ResponseUserSchema)
+        def update_user_image(
+            id_key: int,
+            image_base64: str,
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ):
+            try:
+                return self.service.update_image(id_key, image_base64)
+            except RecordNotFoundError as error:
+                raise HTTPException(status_code=404, detail=str(error))

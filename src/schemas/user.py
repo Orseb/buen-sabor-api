@@ -39,4 +39,5 @@ class ResponseUserSchema(CreateUserSchema):
     """Schema for user responses."""
 
     id_key: int
+    image_url: Optional[str] = None
     addresses: Optional[List[ResponseAddressSchema]] = []

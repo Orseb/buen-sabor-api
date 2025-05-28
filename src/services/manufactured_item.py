@@ -52,7 +52,6 @@ class ManufacturedItemService(BaseServiceImplementation):
         schema.details = []
         manufactured_item = super().update(id_key, schema)
 
-        # Delete existing details
         with self.repository.session_scope() as session:
             details_to_delete = (
                 session.query(self.manufactured_item_detail_repository.model)
@@ -65,7 +64,6 @@ class ManufacturedItemService(BaseServiceImplementation):
             for detail in details_to_delete:
                 session.delete(detail)
 
-        # Add new details
         for detail in details:
             detail_dict = detail.model_dump()
             detail_dict["manufactured_item_id"] = manufactured_item.id_key
@@ -103,3 +101,11 @@ class ManufacturedItemService(BaseServiceImplementation):
                 max_quantity = min(max_quantity, available)
 
         return max_quantity if max_quantity != float("inf") else 0
+
+    def update_image(
+        self, id_key: int, base64_image: str
+    ) -> ResponseManufacturedItemSchema:
+        image_url = upload_base64_image_to_cloudinary(
+            base64_image, "manufactured_items"
+        )
+        return self.repository.update(id_key, {"image_url": image_url})
