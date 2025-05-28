@@ -48,7 +48,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         """Get a user by Google sub."""
         return self.get_one_by("google_sub", google_sub)
 
-    def get_employees(self) -> List[ResponseUserSchema]:
+    def get_employees(self, offset: int, limit: int) -> List[ResponseUserSchema]:
         """Get all users with employee roles (not clients)."""
         with self.repository.session_scope() as session:
             employees = (
@@ -56,17 +56,21 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
                 .filter(self.model.role != UserRole.cliente)
                 .filter(self.model.role != UserRole.administrador)
                 .filter(self.model.active.is_(True))
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             return [self.schema.model_validate(employee) for employee in employees]
 
-    def get_clients(self) -> List[ResponseUserSchema]:
+    def get_clients(self, offset: int, limit: int) -> List[ResponseUserSchema]:
         """Get all users with client roles."""
         with self.repository.session_scope() as session:
             clients = (
                 session.query(self.model)
                 .filter(self.model.role == UserRole.cliente)
                 .filter(self.model.active.is_(True))
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             return [self.schema.model_validate(client) for client in clients]

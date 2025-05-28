@@ -58,13 +58,17 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
 
         return super().update(id_key, schema_or_dict)
 
-    def get_top_level_categories(self) -> List[ResponseManufacturedItemCategorySchema]:
-        """Get all top-level categories (those without a parent)."""
+    def get_top_level_categories(
+        self, offset: int, limit: int
+    ) -> List[ResponseManufacturedItemCategorySchema]:
+        """Get all top-level categories."""
         with self.repository.session_scope() as session:
             categories = (
                 session.query(self.model)
                 .filter(self.model.parent_id.is_(None))
                 .filter(self.model.active.is_(True))
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             return [self.schema.model_validate(category) for category in categories]

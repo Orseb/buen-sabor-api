@@ -71,19 +71,23 @@ class OrderController(
         @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
         async def get_by_status(
             status: OrderStatus,
+            offset: int = 0,
+            limit: int = 10,
             current_user: Dict[str, Any] = Depends(
                 has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
             ),
         ) -> List[ResponseOrderSchema]:
             """Get orders by status."""
-            return self.service.get_by_status(status)
+            return self.service.get_by_status(status, offset, limit)
 
         @self.router.get("/user/token", response_model=List[ResponseOrderSchema])
         async def get_by_user(
+            offset: int = 0,
+            limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> List[ResponseOrderSchema]:
             """Get orders by user."""
-            return self.service.get_by_user(current_user["id"])
+            return self.service.get_by_user(current_user["id"], offset, limit)
 
         @self.router.put("/{id_key}/status", response_model=ResponseOrderSchema)
         async def update_status(

@@ -25,8 +25,12 @@ class AddressController(BaseControllerImplementation):
         )
 
         @self.router.get("/user/addresses", response_model=List[ResponseAddressSchema])
-        async def get_user_addresses(current_user: dict = Depends(get_current_user)):
-            return self.service.get_user_addresses(current_user["id"])
+        async def get_user_addresses(
+            offset: int = 0,
+            limit: int = 10,
+            current_user: dict = Depends(get_current_user),
+        ):
+            return self.service.get_user_addresses(offset, limit, current_user["id"])
 
         @self.router.post("/user/addresses", response_model=ResponseAddressSchema)
         async def create_user_address(

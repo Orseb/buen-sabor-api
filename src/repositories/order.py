@@ -15,12 +15,16 @@ class OrderRepository(BaseRepositoryImplementation):
             response_schema=ResponseOrderSchema,
         )
 
-    def find_by_status(self, status: OrderStatus) -> List[ResponseOrderSchema]:
+    def find_by_status(
+        self, status: OrderStatus, offset: int, limit: int
+    ) -> List[ResponseOrderSchema]:
         with self.session_scope() as session:
             models = (
                 session.query(self.model)
                 .filter(self.model.status == status)
                 .order_by(desc(self.model.date))
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             schemas = []
@@ -28,12 +32,16 @@ class OrderRepository(BaseRepositoryImplementation):
                 schemas.append(self.schema.model_validate(model))
             return schemas
 
-    def find_by_user(self, user_id: int) -> List[ResponseOrderSchema]:
+    def find_by_user(
+        self, user_id: int, offset: int, limit: int
+    ) -> List[ResponseOrderSchema]:
         with self.session_scope() as session:
             models = (
                 session.query(self.model)
                 .filter(self.model.user_id == user_id)
                 .order_by(desc(self.model.date))
+                .offset(offset)
+                .limit(limit)
                 .all()
             )
             schemas = []

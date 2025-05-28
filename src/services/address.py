@@ -21,11 +21,17 @@ class AddressService(BaseServiceImplementation):
             response_schema=ResponseAddressSchema,
         )
 
-    def get_user_addresses(self, user_id: int) -> List[ResponseAddressSchema]:
+    def get_user_addresses(
+        self, offset: int, limit: int, user_id: int
+    ) -> List[ResponseAddressSchema]:
         """Get all addresses for a user"""
         with self.repository.session_scope() as session:
             addresses = (
-                session.query(self.model).filter(self.model.user_id == user_id).all()
+                session.query(self.model)
+                .filter(self.model.user_id == user_id)
+                .offset(offset)
+                .limit(limit)
+                .all()
             )
             return [
                 self.response_schema.model_validate(address) for address in addresses

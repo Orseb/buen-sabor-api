@@ -46,7 +46,9 @@ class BaseService(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def get_all_by(self, field_name: str, field_value: Any) -> List[S]:
+    def get_all_by(
+        self, field_name: str, field_value: Any, offset: int, limit: int
+    ) -> List[S]:
         """Get all records by a specific field value."""
         pass
 

@@ -25,9 +25,11 @@ class InventoryItemController(BaseControllerImplementation):
             "/products/all", response_model=List[ResponseInventoryItemSchema]
         )
         def get_product_inventory_items(
+            offset: int = 0,
+            limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ):
-            return self.service.get_all_by("is_ingredient", False)
+            return self.service.get_all_by("is_ingredient", False, offset, limit)
 
         @self.router.put("/{id_key}/image", response_model=ResponseInventoryItemSchema)
         def update_inventory_item_image(

@@ -42,7 +42,9 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def find_all_by(self, field_name: str, field_value: Any) -> List[S]:
+    def find_all_by(
+        self, field_name: str, field_value: Any, offset: int, limit: int
+    ) -> List[S]:
         """Find all records by a specific field value."""
         pass
 

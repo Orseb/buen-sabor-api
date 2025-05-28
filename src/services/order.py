@@ -109,13 +109,17 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
         return total_time
 
-    def get_by_status(self, status: OrderStatus) -> List[ResponseOrderSchema]:
+    def get_by_status(
+        self, status: OrderStatus, offset: int = 0, limit: int = 10
+    ) -> List[ResponseOrderSchema]:
         """Get orders by status."""
-        return self.repository.find_by_status(status)
+        return self.repository.find_by_status(status, offset, limit)
 
-    def get_by_user(self, user_id: int) -> List[ResponseOrderSchema]:
+    def get_by_user(
+        self, user_id: int, offset: int, limit: int
+    ) -> List[ResponseOrderSchema]:
         """Get orders by user."""
-        return self.repository.find_by_user(user_id)
+        return self.repository.find_by_user(user_id, offset, limit)
 
     def update_status(self, order_id: int, status: OrderStatus) -> ResponseOrderSchema:
         """Update order status."""

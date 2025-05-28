@@ -29,12 +29,14 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
             response_model=List[ResponseManufacturedItemCategorySchema],
         )
         async def get_top_level_categories(
+            offset: int = 0,
+            limit: int = 10,
             current_user: dict = Depends(
                 has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
-            )
+            ),
         ):
             """Get all top-level categories (those without a parent)."""
-            return self.service.get_top_level_categories()
+            return self.service.get_top_level_categories(offset, limit)
 
         @self.router.get(
             "/{category_id}/subcategories",
