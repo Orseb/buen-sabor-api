@@ -42,6 +42,9 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         inventory_details = schema.inventory_details
         schema_dict = schema.model_dump()
 
+        if not details and not inventory_details:
+            raise ValueError("Order must have at least one detail or inventory detail.")
+
         schema_dict["status"] = OrderStatus.a_confirmar
 
         schema_dict.pop("details", None)

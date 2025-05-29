@@ -42,31 +42,34 @@ class OrderController(
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> ResponseOrderSchema:
             """Create a new order."""
-            order.user_id = current_user["id"]
+            try:
+                order.user_id = current_user["id"]
 
-            if order.delivery_method == DeliveryMethod.pickup.value:
+                if order.delivery_method == DeliveryMethod.pickup.value:
+                    return self.service.save(order)
+
+                if not order.address_id:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="An address must be supplied in delivery method.",
+                    )
+
+                if order.payment_method != PaymentMethod.mercado_pago.value:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Mercado Pago must be selected as the payment method in delivery.",
+                    )
+
+                user_addresses = self.address_service.get_user_addresses(order.user_id)
+                if not any(addr.id_key == order.address_id for addr in user_addresses):
+                    raise HTTPException(
+                        status_code=403,
+                        detail="The selected address does not belong to the user",
+                    )
+
                 return self.service.save(order)
-
-            if not order.address_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="An address must be supplied in delivery method.",
-                )
-
-            if order.payment_method != PaymentMethod.mercado_pago.value:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Mercado Pago must be selected as the payment method in delivery.",
-                )
-
-            user_addresses = self.address_service.get_user_addresses(order.user_id)
-            if not any(addr.id_key == order.address_id for addr in user_addresses):
-                raise HTTPException(
-                    status_code=403,
-                    detail="The selected address does not belong to the user",
-                )
-
-            return self.service.save(order)
+            except ValueError as error:
+                raise HTTPException(status_code=400, detail=str(error))
 
         @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
         async def get_by_status(
