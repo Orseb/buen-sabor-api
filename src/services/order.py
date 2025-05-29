@@ -42,16 +42,8 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         inventory_details = schema.inventory_details
         schema_dict = schema.model_dump()
 
-        if not details and not inventory_details:
-            raise ValueError("Order must have at least one detail or inventory detail.")
-
-        schema_dict["status"] = OrderStatus.a_confirmar
-
         schema_dict.pop("details", None)
         schema_dict.pop("inventory_details", None)
-        schema_dict["total"] = 0.0
-        schema_dict["discount"] = 0.0
-        schema_dict["final_total"] = 0.0
 
         order = self.repository.save(OrderModel(**schema_dict))
 
@@ -59,19 +51,22 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         self._save_order_inventory_details(inventory_details, order.id_key)
         self._update_inventory_stock(details, order.id_key)
 
-        costs = {}
-
-        costs["total"] = self._calculate_order_total(details, inventory_details)
-        costs["discount"] = (
-            costs["total"] * 0.1
-            if delivery_method == DeliveryMethod.pickup.value
-            else 0
+        total = self._calculate_order_total(details, inventory_details)
+        discount = (
+            total * 0.1 if delivery_method == DeliveryMethod.pickup.value else 0.0
         )
-        costs["final_total"] = costs["total"] - costs["discount"]
-        costs["estimated_time"] = self._calculate_estimated_time(order.id_key)
-        self.update(order.id_key, costs)
+        final_total = total - discount
+        estimated_time = self._calculate_estimated_time(order.id_key)
 
-        return self.get_one(order.id_key)
+        return self.update(
+            order.id_key,
+            {
+                "total": total,
+                "discount": discount,
+                "final_total": final_total,
+                "estimated_time": estimated_time,
+            },
+        )
 
     def _calculate_order_total(
         self,

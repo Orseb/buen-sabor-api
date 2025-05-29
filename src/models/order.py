@@ -40,10 +40,10 @@ class OrderModel(BaseModel):
     __tablename__ = "order"
 
     date = Column(DateTime, server_default=func.now(), nullable=False)
-    total = Column(Float, nullable=False)
+    total = Column(Float, default=0.0, nullable=False)
     discount = Column(Float, default=0.0)
-    final_total = Column(Float, nullable=False)
-    status = Column(Enum(OrderStatus), nullable=False, default=OrderStatus.a_confirmar)
+    final_total = Column(Float, default=0.0, nullable=False)
+    status = Column(Enum(OrderStatus), default=OrderStatus.a_confirmar, nullable=False)
     estimated_time = Column(Integer)
     delivery_method = Column(Enum(DeliveryMethod), nullable=False)
     payment_method = Column(Enum(PaymentMethod), nullable=False)

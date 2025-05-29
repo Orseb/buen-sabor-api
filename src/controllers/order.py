@@ -43,6 +43,12 @@ class OrderController(
         ) -> ResponseOrderSchema:
             """Create a new order."""
             try:
+                if not order.details and not order.inventory_details:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Order must have at least one detail or inventory detail.",
+                    )
+
                 order.user_id = current_user["id"]
 
                 if order.delivery_method == DeliveryMethod.pickup.value:

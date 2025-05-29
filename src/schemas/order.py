@@ -13,7 +13,6 @@ from src.schemas.user import ResponseUserSchema
 
 
 class BaseOrderSchema(BaseSchema):
-    date: Optional[datetime] = None
     delivery_method: DeliveryMethod
     payment_method: PaymentMethod
     notes: Optional[str] = None
@@ -27,6 +26,7 @@ class CreateOrderSchema(BaseOrderSchema):
 
 
 class ResponseOrderSchema(BaseOrderSchema):
+    date: Optional[datetime] = None
     payment_id: Optional[str] = None
     estimated_time: Optional[int] = None
     final_total: Optional[float] = None
