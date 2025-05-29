@@ -6,8 +6,6 @@ from src.schemas.inventory_item import ResponseInventoryItemSchema
 
 class BaseOrderInventoryDetailSchema(BaseSchema):
     quantity: int
-    unit_price: float
-    subtotal: float
 
 
 class CreateOrderInventoryDetailSchema(BaseOrderInventoryDetailSchema):
@@ -16,6 +14,8 @@ class CreateOrderInventoryDetailSchema(BaseOrderInventoryDetailSchema):
 
 
 class ResponseOrderInventoryDetailSchema(CreateOrderInventoryDetailSchema):
+    unit_price: float
+    subtotal: float
     order_id: int
     inventory_item: ResponseInventoryItemSchema
     id_key: int

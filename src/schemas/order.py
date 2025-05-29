@@ -14,15 +14,8 @@ from src.schemas.user import ResponseUserSchema
 
 class BaseOrderSchema(BaseSchema):
     date: Optional[datetime] = None
-    total: float
-    discount: float = 0.0
-    final_total: float
-    status: OrderStatus = OrderStatus.a_confirmar
-    estimated_time: Optional[int] = None
     delivery_method: DeliveryMethod
     payment_method: PaymentMethod
-    payment_id: Optional[str] = None
-    is_paid: bool = False
     notes: Optional[str] = None
 
 
@@ -34,6 +27,13 @@ class CreateOrderSchema(BaseOrderSchema):
 
 
 class ResponseOrderSchema(BaseOrderSchema):
+    payment_id: Optional[str] = None
+    estimated_time: Optional[int] = None
+    final_total: Optional[float] = None
+    discount: Optional[float] = None
+    total: Optional[float] = None
+    is_paid: bool = False
+    status: OrderStatus
     user: ResponseUserSchema
     address: Optional[ResponseAddressSchema] = None
     details: List[ResponseOrderDetailSchema] = []

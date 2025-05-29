@@ -6,8 +6,6 @@ from src.schemas.manufactured_item import ResponseManufacturedItemSchema
 
 class BaseOrderDetailSchema(BaseSchema):
     quantity: int
-    unit_price: float
-    subtotal: float
 
 
 class CreateOrderDetailSchema(BaseOrderDetailSchema):
@@ -16,6 +14,8 @@ class CreateOrderDetailSchema(BaseOrderDetailSchema):
 
 
 class ResponseOrderDetailSchema(BaseOrderDetailSchema):
+    unit_price: float
+    subtotal: float
     order_id: int
     manufactured_item: ResponseManufacturedItemSchema
     id_key: int
