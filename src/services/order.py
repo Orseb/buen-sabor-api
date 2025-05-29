@@ -37,10 +37,17 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
     def save(self, schema: CreateOrderSchema) -> ResponseOrderSchema:
         """Save an order with its details and update inventory stock."""
-        delivery_method = schema.delivery_method
         details = schema.details
         inventory_details = schema.inventory_details
         schema_dict = schema.model_dump()
+
+        schema_dict["total"] = self._calculate_order_total(details, inventory_details)
+        schema_dict["discount"] = (
+            schema_dict["total"] * 0.1
+            if schema.delivery_method == DeliveryMethod.pickup.value
+            else 0.0
+        )
+        schema_dict["final_total"] = schema_dict["total"] - schema_dict["discount"]
 
         schema_dict.pop("details", None)
         schema_dict.pop("inventory_details", None)
@@ -51,22 +58,9 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         self._save_order_inventory_details(inventory_details, order.id_key)
         self._update_inventory_stock(details, order.id_key)
 
-        total = self._calculate_order_total(details, inventory_details)
-        discount = (
-            total * 0.1 if delivery_method == DeliveryMethod.pickup.value else 0.0
-        )
-        final_total = total - discount
         estimated_time = self._calculate_estimated_time(order.id_key)
 
-        return self.update(
-            order.id_key,
-            {
-                "total": total,
-                "discount": discount,
-                "final_total": final_total,
-                "estimated_time": estimated_time,
-            },
-        )
+        return self.update(order.id_key, {"estimated_time": estimated_time})
 
     def _calculate_order_total(
         self,
