@@ -18,3 +18,8 @@ def upload_base64_image_to_cloudinary(base64_str, folder):
     image_data = base64.b64decode(base64_str)
     result = cloudinary.uploader.upload(image_data, folder=folder)
     return result["secure_url"]
+
+
+def delete_image_from_cloudinary(image_url: str):
+    public_id = image_url.split("/")[-1].split(".")[0]
+    cloudinary.uploader.destroy(f"manufactured_items/{public_id}")

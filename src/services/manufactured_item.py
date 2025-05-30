@@ -7,7 +7,10 @@ from src.schemas.manufactured_item import (
 )
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
-from src.utils.cloudinary import upload_base64_image_to_cloudinary
+from src.utils.cloudinary import (
+    delete_image_from_cloudinary,
+    upload_base64_image_to_cloudinary,
+)
 
 
 class ManufacturedItemService(BaseServiceImplementation):
@@ -53,3 +56,14 @@ class ManufacturedItemService(BaseServiceImplementation):
             return self.repository.update_with_details(id_key, schema, details)
         except Exception as e:
             raise RuntimeError(f"Failed to update manufactured item: {e}")
+
+    def delete(self, id_key: int) -> ResponseManufacturedItemSchema:
+        """Delete a manufactured item and its image from Cloudinary."""
+        manufactured_item = self.repository.find(id_key)
+        if manufactured_item.image_url:
+            try:
+                delete_image_from_cloudinary(manufactured_item.image_url)
+            except Exception as e:
+                print("Failed to delete image from Cloudinary:", e)
+
+        return self.repository.remove(id_key)
