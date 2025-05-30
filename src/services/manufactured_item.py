@@ -1,5 +1,4 @@
 from src.models.manufactured_item import ManufacturedItemModel
-from src.models.manufactured_item_detail import ManufacturedItemDetailModel
 from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.repositories.manufactured_item_detail import ManufacturedItemDetailRepository
 from src.schemas.manufactured_item import (
@@ -43,27 +42,14 @@ class ManufacturedItemService(BaseServiceImplementation):
         self, id_key: int, schema: CreateManufacturedItemSchema
     ) -> ResponseManufacturedItemSchema:
         """Update a manufactured item with its details"""
-        details = schema.details
-        schema.details = []
+        if schema.image_url:
+            schema.image_url = upload_base64_image_to_cloudinary(
+                schema.image_url, "manufactured_items"
+            )
 
-        old_manufactured_item_details = self.repository.find(id_key).details
-        for detail in old_manufactured_item_details:
-            self.manufactured_item_detail_repository.remove(detail.id_key)
-
-        manufactured_item = super().update(id_key, schema)
-
-        for detail in details:
-            detail_dict = detail.model_dump()
-            detail_dict["manufactured_item_id"] = manufactured_item.id_key
-            detail_model = ManufacturedItemDetailModel(**detail_dict)
-            self.manufactured_item_detail_repository.save(detail_model)
-
-        return self.get_one(manufactured_item.id_key)
-
-    def update_image(
-        self, id_key: int, base64_image: str
-    ) -> ResponseManufacturedItemSchema:
-        image_url = upload_base64_image_to_cloudinary(
-            base64_image, "manufactured_items"
-        )
-        return self.repository.update(id_key, {"image_url": image_url})
+        try:
+            details = schema.details
+            schema.details = []
+            return self.repository.update_with_details(id_key, schema, details)
+        except Exception as e:
+            raise RuntimeError(f"Failed to update manufactured item: {e}")
