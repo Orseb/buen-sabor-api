@@ -21,6 +21,7 @@ class ManufacturedItemRepository(BaseRepositoryImplementation):
     def save_with_details(
         self, manufactured_item_model, details
     ) -> ResponseManufacturedItemSchema:
+        """Save a manufactured item along with its details."""
         with self.session_scope() as session:
             session.add(manufactured_item_model)
             session.flush()
@@ -39,6 +40,7 @@ class ManufacturedItemRepository(BaseRepositoryImplementation):
     def update_with_details(
         self, id_key, schema, details
     ) -> ResponseManufacturedItemSchema:
+        """Update a manufactured item along with its details."""
         with self.session_scope() as session:
             manufactured_item_model = session.get(self.model, id_key)
             if manufactured_item_model is None:
