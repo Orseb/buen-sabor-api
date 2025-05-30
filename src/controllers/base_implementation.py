@@ -76,7 +76,7 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
                 raise HTTPException(
                     status_code=500, detail=f"Database error: {str(error)}"
                 )
-            except ValueError as error:
+            except Exception as error:
                 raise HTTPException(status_code=400, detail=str(error))
 
         @self.router.put("/{id_key}", response_model=self.response_schema)
@@ -97,7 +97,7 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
                 raise HTTPException(
                     status_code=500, detail=f"Database error: {str(error)}"
                 )
-            except ValueError as error:
+            except Exception as error:
                 raise HTTPException(status_code=400, detail=str(error))
 
         @self.router.delete("/{id_key}")
