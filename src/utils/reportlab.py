@@ -1,0 +1,53 @@
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+
+def generate_invoice_pdf(invoice_data: dict, filename: str):
+    doc = SimpleDocTemplate(filename, pagesize=A4)
+    elements = []
+    styles = getSampleStyleSheet()
+
+    elements.append(Paragraph("Factura", styles["Title"]))
+    elements.append(Spacer(1, 12))
+
+    elements.append(
+        Paragraph(f"Nro Factura: {invoice_data['number']}", styles["Normal"])
+    )
+    elements.append(Paragraph(f"Fecha: {invoice_data['date']}", styles["Normal"]))
+    elements.append(
+        Paragraph(f"Cliente: {invoice_data['user_name']}", styles["Normal"])
+    )
+    elements.append(Spacer(1, 12))
+
+    table_data = [["Item", "Quantity", "Unit Price", "Total"]]
+    for item in invoice_data["items"]:
+        table_data.append(
+            [
+                item["name"],
+                str(item["quantity"]),
+                f"${item['unit_price']:.2f}",
+                f"${item['total']:.2f}",
+            ]
+        )
+
+    table = Table(table_data, hAlign="LEFT")
+    table.setStyle(
+        TableStyle(
+            [
+                ("BACKGROUND", (0, 0), (-1, 0), colors.grey),
+                ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
+                ("ALIGN", (1, 1), (-1, -1), "CENTER"),
+                ("GRID", (0, 0), (-1, -1), 1, colors.black),
+            ]
+        )
+    )
+    elements.append(table)
+    elements.append(Spacer(1, 12))
+
+    elements.append(
+        Paragraph(f"Total: ${invoice_data['total']:.2f}", styles["Heading2"])
+    )
+
+    doc.build(elements)

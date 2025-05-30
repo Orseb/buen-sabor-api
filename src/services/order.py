@@ -190,7 +190,12 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
     def process_cash_payment(self, order: ResponseOrderSchema) -> ResponseOrderSchema:
         """Process cash payment for an order."""
         return self.update(
-            order.id_key, {"payment_id": "Pago en efectivo", "is_paid": True}
+            order.id_key,
+            {
+                "payment_id": "Pago en efectivo",
+                "is_paid": True,
+                "status": OrderStatus.facturado,
+            },
         )
 
     def process_mp_payment(self, order: ResponseOrderSchema) -> str:
