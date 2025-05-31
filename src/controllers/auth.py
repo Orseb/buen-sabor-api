@@ -2,8 +2,6 @@ from typing import Any, Dict
 
 from authlib.integrations.base_client import OAuthError
 from fastapi import APIRouter, Depends, HTTPException, Request
-from psycopg2.errors import UniqueViolation  # noqa
-from sqlalchemy.exc import IntegrityError
 from starlette.responses import RedirectResponse
 from starlette.status import HTTP_401_UNAUTHORIZED
 
@@ -26,15 +24,8 @@ async def register(
     new_user: RegisterRequest, user_service: UserService = Depends(get_user_service)
 ) -> Dict[str, Any]:
     """Register a new user."""
-    try:
-        created_user = user_service.save(new_user)
-        return created_user.model_dump()
-    except IntegrityError as error:
-        if isinstance(error.orig, UniqueViolation):
-            raise HTTPException(
-                status_code=400, detail="Ya existe un usuario con ese correo."
-            )
-        raise HTTPException(status_code=500, detail=f"Database error: {str(error)}")
+    created_user = user_service.save(new_user)
+    return created_user.model_dump()
 
 
 @router.post("/login")
@@ -58,12 +49,7 @@ async def login(
 @router.get("/google/login")
 async def google_login(request: Request) -> Dict[str, Any]:
     """Redirect to Google OAuth login."""
-    redirect_uri = settings.google_redirect_uri
-    if not redirect_uri:
-        raise HTTPException(
-            status_code=500, detail="Google redirect URI not configured"
-        )
-    return await oauth.google.authorize_redirect(request, redirect_uri)
+    return await oauth.google.authorize_redirect(request, settings.google_redirect_uri)
 
 
 @router.get("/google/callback")

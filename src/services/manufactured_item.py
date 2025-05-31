@@ -33,13 +33,10 @@ class ManufacturedItemService(BaseServiceImplementation):
                 schema.image_url, "manufactured_items"
             )
 
-        try:
-            details = schema.details
-            schema.details = []
-            manufactured_item_model = self.to_model(schema)
-            return self.repository.save_with_details(manufactured_item_model, details)
-        except Exception as e:
-            raise RuntimeError(f"Failed to save manufactured item: {e}")
+        details = schema.details
+        schema.details = []
+        manufactured_item_model = self.to_model(schema)
+        return self.repository.save_with_details(manufactured_item_model, details)
 
     def update(
         self, id_key: int, schema: CreateManufacturedItemSchema
@@ -50,12 +47,9 @@ class ManufacturedItemService(BaseServiceImplementation):
                 schema.image_url, "manufactured_items"
             )
 
-        try:
-            details = schema.details
-            schema.details = []
-            return self.repository.update_with_details(id_key, schema, details)
-        except Exception as e:
-            raise RuntimeError(f"Failed to update manufactured item: {e}")
+        details = schema.details
+        schema.details = []
+        return self.repository.update_with_details(id_key, schema, details)
 
     def delete(self, id_key: int) -> ResponseManufacturedItemSchema:
         """Delete a manufactured item and its image from Cloudinary."""

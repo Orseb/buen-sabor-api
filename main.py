@@ -1,5 +1,6 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy.exc import IntegrityError
 from starlette.middleware.sessions import SessionMiddleware
 
 from src.config.database import Database
@@ -22,18 +23,23 @@ from src.controllers.order import OrderController
 from src.controllers.province import ProvinceController
 from src.controllers.report import ReportController
 from src.controllers.user import UserController
+from src.repositories.base_implementation import RecordNotFoundError
+from src.utils.exception_handlers import (
+    global_exception_handler,
+    http_exception_handler,
+    integrity_error_handler,
+    not_found_error_handler,
+    value_error_handler,
+)
 
-# Initialize database
 db = Database()
 
-# Create FastAPI application
 app = FastAPI(
     title="El Buen Sabor API",
     description="An API restaurant management system for El Buen Sabor.",
     version="1.0.0",
 )
 
-# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -42,11 +48,16 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Add session middleware for OAuth
 app.add_middleware(
     SessionMiddleware,
     secret_key=settings.secret_key or "default-secret-key-for-development-only",
 )
+
+app.add_exception_handler(HTTPException, http_exception_handler)
+app.add_exception_handler(RecordNotFoundError, not_found_error_handler)
+app.add_exception_handler(ValueError, value_error_handler)
+app.add_exception_handler(IntegrityError, integrity_error_handler)
+app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(health_check_controller, prefix="/health_check")
 app.include_router(auth_router, prefix="/auth")
@@ -70,7 +81,6 @@ app.include_router(InvoiceController().router, prefix="/invoice")
 app.include_router(ReportController().router, prefix="/reports")
 
 
-# Add startup event to check database connection
 @app.on_event("startup")
 async def startup_event():
     """Check database connection on startup."""

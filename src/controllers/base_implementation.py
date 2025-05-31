@@ -1,12 +1,9 @@
 from typing import Any, Dict, Generic, List, Optional, Type, TypeVar
 
-from fastapi import APIRouter, Depends, HTTPException
-from psycopg2.errors import UniqueViolation
-from sqlalchemy.exc import IntegrityError
+from fastapi import APIRouter, Depends
 
 from src.controllers.base import BaseController
 from src.models.user import UserRole
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.base import BaseSchema
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base import BaseService
@@ -57,28 +54,14 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         async def get_one(
             id_key: int, current_user: Dict[str, Any] = Depends(get_current_user)
         ):
-            try:
-                return self.get_one(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+            return self.get_one(id_key)
 
         @self.router.post("/", response_model=self.response_schema)
         async def save(
             schema_in: self.create_schema,
             current_user: Dict[str, Any] = Depends(role_dependency),
         ):
-            try:
-                return self.save(schema_in)
-            except IntegrityError as error:
-                if isinstance(error.orig, UniqueViolation):
-                    raise HTTPException(
-                        status_code=400, detail="Unique constraint violated."
-                    )
-                raise HTTPException(
-                    status_code=500, detail=f"Database error: {str(error)}"
-                )
-            except Exception as error:
-                raise HTTPException(status_code=400, detail=str(error))
+            return self.save(schema_in)
 
         @self.router.put("/{id_key}", response_model=self.response_schema)
         async def update(
@@ -86,29 +69,13 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
             schema_in: self.create_schema,
             current_user: Dict[str, Any] = Depends(role_dependency),
         ):
-            try:
-                return self.update(id_key, schema_in)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError as error:
-                if isinstance(error.orig, UniqueViolation):
-                    raise HTTPException(
-                        status_code=400, detail="Unique constraint violated."
-                    )
-                raise HTTPException(
-                    status_code=500, detail=f"Database error: {str(error)}"
-                )
-            except Exception as error:
-                raise HTTPException(status_code=400, detail=str(error))
+            return self.update(id_key, schema_in)
 
         @self.router.delete("/{id_key}")
         async def delete(
             id_key: int, current_user: Dict[str, Any] = Depends(role_dependency)
         ):
-            try:
-                return self.delete(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+            return self.delete(id_key)
 
     @property
     def service(self) -> BaseService:

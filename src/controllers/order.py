@@ -1,12 +1,10 @@
 from typing import Any, Dict
 
 from fastapi import Depends, HTTPException
-from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.order import DeliveryMethod, OrderStatus, PaymentMethod
 from src.models.user import UserRole
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.address import AddressService
@@ -43,44 +41,41 @@ class OrderController(
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> ResponseOrderSchema:
             """Create a new order."""
-            try:
-                if not order.details and not order.inventory_details:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Order must have at least one detail or inventory detail.",
-                    )
-
-                order.user_id = current_user["id"]
-
-                if order.delivery_method == DeliveryMethod.pickup.value:
-                    return self.service.save(order)
-
-                if not order.address_id:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="An address must be supplied in delivery method.",
-                    )
-
-                if order.payment_method != PaymentMethod.mercado_pago.value:
-                    raise HTTPException(
-                        status_code=400,
-                        detail="Mercado Pago must be selected as the payment method in delivery.",
-                    )
-
-                user_addresses = self.address_service.get_user_addresses(
-                    user_id=order.user_id, offset=0, limit=100
+            if not order.details and not order.inventory_details:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Order must have at least one detail or inventory detail.",
                 )
-                if not any(
-                    addr.id_key == order.address_id for addr in user_addresses.items
-                ):
-                    raise HTTPException(
-                        status_code=403,
-                        detail="The selected address does not belong to the user",
-                    )
 
+            order.user_id = current_user["id"]
+
+            if order.delivery_method == DeliveryMethod.pickup.value:
                 return self.service.save(order)
-            except ValueError as error:
-                raise HTTPException(status_code=400, detail=str(error))
+
+            if not order.address_id:
+                raise HTTPException(
+                    status_code=400,
+                    detail="An address must be supplied in delivery method.",
+                )
+
+            if order.payment_method != PaymentMethod.mercado_pago.value:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Mercado Pago must be selected as the payment method in delivery.",
+                )
+
+            user_addresses = self.address_service.get_user_addresses(
+                user_id=order.user_id, offset=0, limit=100
+            )
+            if not any(
+                addr.id_key == order.address_id for addr in user_addresses.items
+            ):
+                raise HTTPException(
+                    status_code=403,
+                    detail="The selected address does not belong to the user",
+                )
+
+            return self.service.save(order)
 
         @self.router.get("/status/{status}", response_model=PaginatedResponseSchema)
         async def get_by_status(
@@ -140,14 +135,7 @@ class OrderController(
                         detail=f"Delivery can only update status to: {allowed_statuses}",
                     )
 
-            try:
-                return self.service.update_status(id_key, status)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError:
-                raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
-                )
+            return self.service.update_status(id_key, status)
 
         @self.router.put("/{id_key}/cash-payment", response_model=ResponseOrderSchema)
         async def process_cash_payment(
@@ -157,14 +145,7 @@ class OrderController(
             ),
         ) -> ResponseOrderSchema:
             """Process cash payment for an order."""
-            try:
-                order = self.service.get_one(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError:
-                raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
-                )
+            order = self.service.get_one(id_key)
 
             if order.is_paid:
                 raise HTTPException(
@@ -190,14 +171,7 @@ class OrderController(
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> Dict[str, str]:
             """Process Mercado Pago payment for an order."""
-            try:
-                order = self.service.get_one(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError:
-                raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
-                )
+            order = self.service.get_one(id_key)
 
             if order.is_paid:
                 raise HTTPException(

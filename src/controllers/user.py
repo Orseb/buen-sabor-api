@@ -1,12 +1,9 @@
 from typing import Any, Dict
 
-from fastapi import Depends, HTTPException
-from psycopg2.errors import UniqueViolation
-from sqlalchemy.exc import IntegrityError
+from fastapi import Depends
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.pagination import PaginatedResponseSchema
 from src.schemas.user import CreateUserSchema, ResponseUserSchema
 from src.services.user import UserService
@@ -45,17 +42,4 @@ class UserController(BaseControllerImplementation):
             schema_in: self.create_schema,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ):
-            try:
-                return self.service.update(current_user["id"], schema_in)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError as error:
-                if isinstance(error.orig, UniqueViolation):
-                    raise HTTPException(
-                        status_code=400, detail="Unique constraint violated."
-                    )
-                raise HTTPException(
-                    status_code=500, detail=f"Database error: {str(error)}"
-                )
-            except Exception as error:
-                raise HTTPException(status_code=400, detail=str(error))
+            return self.service.update(current_user["id"], schema_in)

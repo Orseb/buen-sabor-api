@@ -1,9 +1,8 @@
 from typing import Any, Dict
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.inventory_item import (
     CreateInventoryItemSchema,
     ResponseInventoryItemSchema,
@@ -44,7 +43,4 @@ class InventoryItemController(BaseControllerImplementation):
             image_base64: str,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ):
-            try:
-                return self.service.update_image(id_key, image_base64)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+            return self.service.update_image(id_key, image_base64)

@@ -2,11 +2,8 @@ import io
 
 from fastapi import HTTPException
 from fastapi.responses import StreamingResponse
-from psycopg2.errors import UniqueViolation
-from sqlalchemy.exc import IntegrityError
 
 from src.controllers.base_implementation import BaseControllerImplementation
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.services.invoice import InvoiceService
 from src.utils.reportlab import generate_pdf_report
@@ -25,25 +22,11 @@ class InvoiceController(BaseControllerImplementation):
             "/credit-note/{invoice_id}", response_model=ResponseInvoiceSchema
         )
         async def generate_credit_note(invoice_id: int):
-            try:
-                return self.service.generate_credit_note(invoice_id)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError as error:
-                if isinstance(error.orig, UniqueViolation):
-                    raise HTTPException(
-                        status_code=400, detail="Unique constraint violated."
-                    )
-                raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
-                )
+            return self.service.generate_credit_note(invoice_id)
 
         @self.router.get("/report/{id_key}")
         async def get_invoice_report(id_key: int):
-            try:
-                invoice = self.service.get_one(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+            invoice = self.service.get_one(id_key)
 
             if invoice.original_invoice_id:
                 raise HTTPException(
@@ -95,10 +78,7 @@ class InvoiceController(BaseControllerImplementation):
 
         @self.router.get("/note-report/{id_key}")
         async def get_credit_note_report(id_key: int):
-            try:
-                credit_note = self.service.get_one(id_key)
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
+            credit_note = self.service.get_one(id_key)
 
             if not credit_note.original_invoice_id:
                 raise HTTPException(

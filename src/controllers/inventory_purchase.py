@@ -1,12 +1,10 @@
 from datetime import datetime
 from typing import List
 
-from fastapi import Depends, HTTPException, Query
-from sqlalchemy.exc import IntegrityError
+from fastapi import Depends, Query
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
-from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.inventory_purchase import (
     CreateInventoryPurchaseSchema,
     ResponseInventoryPurchaseSchema,
@@ -39,19 +37,12 @@ class InventoryPurchaseController(BaseControllerImplementation):
             ),
         ):
             """Add stock to an inventory item and record the purchase."""
-            try:
-                return self.service.add_stock(
-                    inventory_item_id=inventory_item_id,
-                    quantity=quantity,
-                    unit_cost=unit_cost,
-                    notes=notes,
-                )
-            except RecordNotFoundError as error:
-                raise HTTPException(status_code=404, detail=str(error))
-            except IntegrityError:
-                raise HTTPException(
-                    status_code=500, detail="An unexpected database error occurred."
-                )
+            return self.service.add_stock(
+                inventory_item_id=inventory_item_id,
+                quantity=quantity,
+                unit_cost=unit_cost,
+                notes=notes,
+            )
 
         @self.router.get(
             "/by-date-range", response_model=List[ResponseInventoryPurchaseSchema]

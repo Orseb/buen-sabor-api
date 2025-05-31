@@ -1,6 +1,6 @@
 from typing import List
 
-from fastapi import Depends, HTTPException, Path
+from fastapi import Depends, Path
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
@@ -47,10 +47,7 @@ class InventoryItemCategoryController(BaseControllerImplementation):
             ),
         ):
             """Get all subcategories for a given parent category."""
-            try:
-                return self.service.get_subcategories(category_id)
-            except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+            return self.service.get_subcategories(category_id)
 
         @self.router.get(
             "/{category_id}/with-subcategories",
@@ -63,7 +60,4 @@ class InventoryItemCategoryController(BaseControllerImplementation):
             ),
         ):
             """Get a category with its subcategories."""
-            try:
-                return self.service.get_category_with_subcategories(category_id)
-            except Exception as e:
-                raise HTTPException(status_code=404, detail=str(e))
+            return self.service.get_category_with_subcategories(category_id)
