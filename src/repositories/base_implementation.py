@@ -65,6 +65,20 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         finally:
             session.close()
 
+    def count_all(self) -> int:
+        with self.session_scope() as session:
+            return session.query(self.model).filter_by(active=True).count()
+
+    def count_all_by(self, field_name: str, field_value: Any) -> int:
+        """Count all records by a specific field value."""
+        with self.session_scope() as session:
+            return (
+                session.query(self.model)
+                .filter(getattr(self.model, field_name) == field_value)
+                .filter_by(active=True)
+                .count()
+            )
+
     def find(self, id_key: int) -> S:
         """Find record with id_key."""
         with self.session_scope() as session:

@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi import Depends, HTTPException
 from sqlalchemy.exc import IntegrityError
@@ -8,6 +8,7 @@ from src.models.order import DeliveryMethod, OrderStatus, PaymentMethod
 from src.models.user import UserRole
 from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.address import AddressService
 from src.services.invoice import InvoiceService
 from src.services.order import OrderService
@@ -77,7 +78,7 @@ class OrderController(
             except ValueError as error:
                 raise HTTPException(status_code=400, detail=str(error))
 
-        @self.router.get("/status/{status}", response_model=List[ResponseOrderSchema])
+        @self.router.get("/status/{status}", response_model=PaginatedResponseSchema)
         async def get_by_status(
             status: OrderStatus,
             offset: int = 0,
@@ -85,16 +86,16 @@ class OrderController(
             current_user: Dict[str, Any] = Depends(
                 has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
             ),
-        ) -> List[ResponseOrderSchema]:
+        ) -> PaginatedResponseSchema:
             """Get orders by status."""
             return self.service.get_by_status(status, offset, limit)
 
-        @self.router.get("/user/token", response_model=List[ResponseOrderSchema])
+        @self.router.get("/user/token", response_model=PaginatedResponseSchema)
         async def get_by_user(
             offset: int = 0,
             limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
-        ) -> List[ResponseOrderSchema]:
+        ) -> PaginatedResponseSchema:
             """Get orders by user."""
             return self.service.get_by_user(current_user["id"], offset, limit)
 

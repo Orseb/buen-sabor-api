@@ -1,8 +1,9 @@
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union, cast
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union, cast
 
 from src.models.base import BaseModel
 from src.repositories.base import BaseRepository
 from src.schemas.base import BaseSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base import BaseService
 
 T = TypeVar("T", bound=BaseModel)
@@ -40,9 +41,13 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         """Get the SQLAlchemy model class."""
         return self._model
 
-    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
+    def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
         """Get all records."""
-        return self.repository.find_all(offset, limit)
+        total = self.repository.count_all()
+        items = self.repository.find_all(offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def get_one(self, id_key: int) -> S:
         """Get a record by primary key."""
@@ -54,9 +59,13 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
 
     def get_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
-    ) -> List[S]:
+    ) -> PaginatedResponseSchema:
         """Get all records by a specific field value."""
-        return self.repository.find_all_by(field_name, field_value, offset, limit)
+        total = self.repository.count_all_by(field_name, field_value)
+        items = self.repository.find_all_by(field_name, field_value, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def save(self, schema: Any) -> S:
         """Save a new record."""

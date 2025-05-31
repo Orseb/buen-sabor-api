@@ -8,6 +8,7 @@ from src.controllers.base import BaseController
 from src.models.user import UserRole
 from src.repositories.base_implementation import RecordNotFoundError
 from src.schemas.base import BaseSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base import BaseService
 from src.utils.rbac import has_role
 
@@ -44,7 +45,7 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
 
         from src.utils.rbac import get_current_user
 
-        @self.router.get("/", response_model=List[self.response_schema])
+        @self.router.get("/", response_model=PaginatedResponseSchema)
         async def get_all(
             offset: int = 0,
             limit: int = 10,
@@ -119,7 +120,7 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         """Get the Pydantic schema class for responses."""
         return self.response_schema
 
-    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
+    def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
         """Get all records paginated."""
         return self.service.get_all(offset, limit)
 

@@ -1,9 +1,10 @@
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union
 
 from src.models.base import BaseModel
 from src.repositories.base import BaseRepository
 from src.schemas.base import BaseSchema
+from src.schemas.pagination import PaginatedResponseSchema
 
 T = TypeVar("T", bound=BaseModel)
 S = TypeVar("S", bound=BaseSchema)
@@ -31,7 +32,7 @@ class BaseService(Generic[T, S], ABC):
         pass
 
     @abstractmethod
-    def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
+    def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
         """Get all records."""
         pass
 
@@ -48,7 +49,7 @@ class BaseService(Generic[T, S], ABC):
     @abstractmethod
     def get_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
-    ) -> List[S]:
+    ) -> PaginatedResponseSchema:
         """Get all records by a specific field value."""
         pass
 

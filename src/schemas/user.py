@@ -23,6 +23,7 @@ class CreateUserSchema(BaseUserSchema):
     password: Optional[str] = None
     google_sub: Optional[str] = None
     active: Optional[bool] = True
+    image_url: Optional[str] = None
 
     @field_validator("password")
     def hash_password(cls, value: Optional[str]) -> Optional[str]:
@@ -38,4 +39,3 @@ class ResponseUserSchema(CreateUserSchema):
     """Schema for user responses."""
 
     id_key: int
-    image_url: Optional[str] = None

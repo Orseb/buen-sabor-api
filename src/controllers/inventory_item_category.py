@@ -8,6 +8,7 @@ from src.schemas.inventory_item_category import (
     CreateInventoryItemCategorySchema,
     ResponseInventoryItemCategorySchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.inventory_item_category import InventoryItemCategoryService
 from src.utils.rbac import has_role
 
@@ -24,9 +25,7 @@ class InventoryItemCategoryController(BaseControllerImplementation):
         self._register_subcategory_routes()
 
     def _register_subcategory_routes(self):
-        @self.router.get(
-            "/top-level/all", response_model=List[ResponseInventoryItemCategorySchema]
-        )
+        @self.router.get("/top-level/all", response_model=PaginatedResponseSchema)
         async def get_top_level_categories(
             offset: int = 0,
             limit: int = 10,

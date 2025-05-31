@@ -1,4 +1,4 @@
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from fastapi import Depends, HTTPException
 
@@ -8,6 +8,7 @@ from src.schemas.inventory_item import (
     CreateInventoryItemSchema,
     ResponseInventoryItemSchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.inventory_item import InventoryItemService
 from src.utils.rbac import get_current_user
 
@@ -21,9 +22,7 @@ class InventoryItemController(BaseControllerImplementation):
             tags=["Inventory Item"],
         )
 
-        @self.router.get(
-            "/products/all", response_model=List[ResponseInventoryItemSchema]
-        )
+        @self.router.get("/products/all", response_model=PaginatedResponseSchema)
         def get_product_inventory_items(
             offset: int = 0,
             limit: int = 10,
@@ -31,9 +30,7 @@ class InventoryItemController(BaseControllerImplementation):
         ):
             return self.service.get_all_by("is_ingredient", False, offset, limit)
 
-        @self.router.get(
-            "/ingredients/all", response_model=List[ResponseInventoryItemSchema]
-        )
+        @self.router.get("/ingredients/all", response_model=PaginatedResponseSchema)
         def get_ingredient_inventory_items(
             offset: int = 0,
             limit: int = 10,

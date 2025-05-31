@@ -8,6 +8,7 @@ from src.schemas.manufactured_item_category import (
     CreateManufacturedItemCategorySchema,
     ResponseManufacturedItemCategorySchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.manufactured_item_category import ManufacturedItemCategoryService
 from src.utils.rbac import has_role
 
@@ -26,7 +27,7 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
     def _register_subcategory_routes(self):
         @self.router.get(
             "/top-level/all",
-            response_model=List[ResponseManufacturedItemCategorySchema],
+            response_model=PaginatedResponseSchema,
         )
         async def get_top_level_categories(
             offset: int = 0,
@@ -35,7 +36,7 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
                 has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
             ),
         ):
-            """Get all top-level categories (those without a parent)."""
+            """Get all top-level categories."""
             return self.service.get_top_level_categories(offset, limit)
 
         @self.router.get(

@@ -8,6 +8,7 @@ from src.schemas.manufactured_item_category import (
     CreateManufacturedItemCategorySchema,
     ResponseManufacturedItemCategorySchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 
 
@@ -60,18 +61,13 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
 
     def get_top_level_categories(
         self, offset: int, limit: int
-    ) -> List[ResponseManufacturedItemCategorySchema]:
+    ) -> PaginatedResponseSchema:
         """Get all top-level categories."""
-        with self.repository.session_scope() as session:
-            categories = (
-                session.query(self.model)
-                .filter(self.model.parent_id.is_(None))
-                .filter(self.model.active.is_(True))
-                .offset(offset)
-                .limit(limit)
-                .all()
-            )
-            return [self.schema.model_validate(category) for category in categories]
+        total = self.repository.count_all_top_level()
+        items = self.repository.get_top_level_categories(offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def get_subcategories(
         self, parent_id: int

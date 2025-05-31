@@ -11,6 +11,7 @@ from src.repositories.order_inventory_detail import OrderInventoryDetailReposito
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.schemas.order_detail import CreateOrderDetailSchema
 from src.schemas.order_inventory_detail import CreateOrderInventoryDetailSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
 from src.services.manufactured_item import ManufacturedItemService
@@ -153,7 +154,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
             )
             max_prep_time = max(max_prep_time, manufactured_item.preparation_time)
 
-        orders_in_kitchen = self.get_by_status(OrderStatus.en_cocina)
+        orders_in_kitchen = self.repository.find_by_status(OrderStatus.en_cocina)
         kitchen_prep_time = 0
         if orders_in_kitchen:
             for kitchen_order in orders_in_kitchen:
@@ -173,15 +174,23 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
     def get_by_status(
         self, status: OrderStatus, offset: int = 0, limit: int = 10
-    ) -> List[ResponseOrderSchema]:
+    ) -> PaginatedResponseSchema:
         """Get orders by status."""
-        return self.repository.find_by_status(status, offset, limit)
+        total = self.repository.count_all_by_status(status)
+        items = self.repository.find_by_status(status, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def get_by_user(
         self, user_id: int, offset: int, limit: int
-    ) -> List[ResponseOrderSchema]:
+    ) -> PaginatedResponseSchema:
         """Get orders by user."""
-        return self.repository.find_by_user(user_id, offset, limit)
+        total = self.repository.count_all_by_user(user_id)
+        items = self.repository.find_by_user(user_id, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def update_status(self, order_id: int, status: OrderStatus) -> ResponseOrderSchema:
         """Update order status."""

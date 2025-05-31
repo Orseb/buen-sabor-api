@@ -1,5 +1,3 @@
-from typing import List
-
 from fastapi import Depends, HTTPException, Path
 from psycopg2.errors import UniqueViolation
 from sqlalchemy.exc import IntegrityError
@@ -11,6 +9,7 @@ from src.schemas.address import (
     ResponseAddressSchema,
     UpdateAddressSchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.address import AddressService
 from src.utils.rbac import get_current_user
 
@@ -24,7 +23,7 @@ class AddressController(BaseControllerImplementation):
             tags=["Address"],
         )
 
-        @self.router.get("/user/addresses", response_model=List[ResponseAddressSchema])
+        @self.router.get("/user/addresses", response_model=PaginatedResponseSchema)
         async def get_user_addresses(
             offset: int = 0,
             limit: int = 10,

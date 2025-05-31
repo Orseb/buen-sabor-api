@@ -1,5 +1,3 @@
-from typing import List
-
 from src.models.address import AddressModel
 from src.repositories.address import AddressRepository
 from src.schemas.address import (
@@ -8,6 +6,7 @@ from src.schemas.address import (
     UpdateAddressSchema,
 )
 from src.schemas.base import BaseSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 
 
@@ -23,19 +22,13 @@ class AddressService(BaseServiceImplementation):
 
     def get_user_addresses(
         self, offset: int, limit: int, user_id: int
-    ) -> List[ResponseAddressSchema]:
+    ) -> PaginatedResponseSchema:
         """Get all addresses for a user"""
-        with self.repository.session_scope() as session:
-            addresses = (
-                session.query(self.model)
-                .filter(self.model.user_id == user_id)
-                .offset(offset)
-                .limit(limit)
-                .all()
-            )
-            return [
-                self.response_schema.model_validate(address) for address in addresses
-            ]
+        total = self.repository.count_all()
+        items = self.repository.get_user_addresses(user_id, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
 
     def create_user_address(
         self, user_id: int, address: UpdateAddressSchema
