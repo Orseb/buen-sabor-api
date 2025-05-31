@@ -219,7 +219,6 @@ class ReportService:
                 .first()
             )
 
-            # Get top purchased items
             top_items_results = (
                 session.query(
                     InventoryPurchaseModel.inventory_item_id,

@@ -6,7 +6,6 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from .settings import settings
 
-# Build database URL from settings
 DATABASE_URL = (
     f"postgresql://{settings.db_username}"
     f":{settings.db_password}"

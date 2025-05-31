@@ -9,7 +9,7 @@ class ManufacturedItemModel(BaseModel):
 
     name = Column(String, nullable=False, unique=True)
     description = Column(String)
-    preparation_time = Column(Integer, nullable=False)  # in minutes
+    preparation_time = Column(Integer, nullable=False)
     price = Column(Float, nullable=False)
     image_url = Column(String)
     recipe = Column(String)

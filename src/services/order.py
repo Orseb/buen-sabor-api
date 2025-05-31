@@ -14,6 +14,7 @@ from src.schemas.order_inventory_detail import CreateOrderInventoryDetailSchema
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
+from src.services.invoice import InvoiceService
 from src.services.manufactured_item import ManufacturedItemService
 from src.services.mercado_pago import create_mp_preference
 
@@ -30,6 +31,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
             response_schema=ResponseOrderSchema,
         )
         self.order_detail_repository = OrderDetailRepository()
+        self.invoice_service = InvoiceService()
         self.order_inventory_detail_repository = OrderInventoryDetailRepository()
         self.inventory_item_repository = InventoryItemRepository()
         self.manufactured_item_repository = ManufacturedItemRepository()
@@ -154,7 +156,9 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
             )
             max_prep_time = max(max_prep_time, manufactured_item.preparation_time)
 
-        orders_in_kitchen = self.repository.find_by_status(OrderStatus.en_cocina)
+        orders_in_kitchen = self.repository.find_by_status(
+            OrderStatus.en_cocina, offset=0, limit=100
+        )
         kitchen_prep_time = 0
         if orders_in_kitchen:
             for kitchen_order in orders_in_kitchen:
@@ -198,18 +202,19 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
     def process_cash_payment(self, order: ResponseOrderSchema) -> ResponseOrderSchema:
         """Process cash payment for an order."""
+        self.invoice_service.generate_invoice(order.id_key)
         return self.update(
             order.id_key,
             {
                 "payment_id": "Pago en efectivo",
                 "is_paid": True,
-                "status": OrderStatus.facturado,
             },
         )
 
     def process_mp_payment(self, order: ResponseOrderSchema) -> str:
         """Process Mercado Pago payment for an order."""
         payment_data = create_mp_preference(order)
+        self.invoice_service.generate_invoice(order.id_key)
 
         self.update(
             order.id_key,

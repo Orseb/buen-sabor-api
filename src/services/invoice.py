@@ -47,7 +47,9 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
             f"INV-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
         )
 
-        invoice = self.save(
+        self.order_service.update_status(order_id, "facturado")
+
+        return self.save(
             CreateInvoiceSchema(
                 number=invoice_number,
                 date=datetime.now(),
@@ -56,10 +58,6 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
                 order_id=order_id,
             )
         )
-
-        self.order_service.update_status(order_id, "facturado")
-
-        return invoice
 
     def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
         """Generate a credit note for an invoice."""

@@ -4,16 +4,16 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
-def generate_invoice_pdf(invoice_data: dict, filename: str):
+def generate_pdf_report(invoice_data: dict, filename: str, invoice_type: str):
     doc = SimpleDocTemplate(filename, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()
 
-    elements.append(Paragraph("Factura", styles["Title"]))
+    elements.append(Paragraph(invoice_type, styles["Title"]))
     elements.append(Spacer(1, 12))
 
     elements.append(
-        Paragraph(f"Nro Factura: {invoice_data['number']}", styles["Normal"])
+        Paragraph(f"Nro {invoice_type}: {invoice_data['number']}", styles["Normal"])
     )
     elements.append(Paragraph(f"Fecha: {invoice_data['date']}", styles["Normal"]))
     elements.append(
@@ -45,6 +45,14 @@ def generate_invoice_pdf(invoice_data: dict, filename: str):
     )
     elements.append(table)
     elements.append(Spacer(1, 12))
+
+    elements.append(
+        Paragraph(f"Subtotal: ${invoice_data['subtotal']:.2f}", styles["Heading2"])
+    )
+
+    elements.append(
+        Paragraph(f"Descuento: -${invoice_data['discount']:.2f}", styles["Heading2"])
+    )
 
     elements.append(
         Paragraph(f"Total: ${invoice_data['total']:.2f}", styles["Heading2"])

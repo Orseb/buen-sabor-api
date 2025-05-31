@@ -24,7 +24,7 @@ class AddressService(BaseServiceImplementation):
         self, offset: int, limit: int, user_id: int
     ) -> PaginatedResponseSchema:
         """Get all addresses for a user"""
-        total = self.repository.count_all()
+        total = self.repository.count_all_user_addresses(user_id)
         items = self.repository.get_user_addresses(user_id, offset, limit)
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
@@ -41,7 +41,6 @@ class AddressService(BaseServiceImplementation):
         self, user_id: int, address_id: int, address: UpdateAddressSchema
     ) -> ResponseAddressSchema:
         """Update an address for a user"""
-        # First verify the address belongs to the user
         existing_address = self.get_one(address_id)
         if existing_address.user_id != user_id:
             raise ValueError("Address does not belong to the user")
@@ -50,7 +49,6 @@ class AddressService(BaseServiceImplementation):
 
     def delete_user_address(self, user_id: int, address_id: int) -> BaseSchema:
         """Delete an address for a user"""
-        # First verify the address belongs to the user
         existing_address = self.get_one(address_id)
         if existing_address.user_id != user_id:
             raise ValueError("Address does not belong to the user")
