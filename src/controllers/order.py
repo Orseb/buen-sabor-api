@@ -67,8 +67,12 @@ class OrderController(
                         detail="Mercado Pago must be selected as the payment method in delivery.",
                     )
 
-                user_addresses = self.address_service.get_user_addresses(order.user_id)
-                if not any(addr.id_key == order.address_id for addr in user_addresses):
+                user_addresses = self.address_service.get_user_addresses(
+                    user_id=order.user_id, offset=0, limit=100
+                )
+                if not any(
+                    addr.id_key == order.address_id for addr in user_addresses.items
+                ):
                     raise HTTPException(
                         status_code=403,
                         detail="The selected address does not belong to the user",

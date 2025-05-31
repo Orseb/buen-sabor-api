@@ -8,6 +8,7 @@ from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
 from src.repositories.order_inventory_detail import OrderInventoryDetailRepository
+from src.repositories.user import UserRepository
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.schemas.order_detail import CreateOrderDetailSchema
 from src.schemas.order_inventory_detail import CreateOrderInventoryDetailSchema
@@ -37,6 +38,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         self.manufactured_item_repository = ManufacturedItemRepository()
         self.manufactured_item_service = ManufacturedItemService()
         self.inventory_item_service = InventoryItemService()
+        self.user_repository = UserRepository()
 
     def save(self, schema: CreateOrderSchema) -> ResponseOrderSchema:
         """Save an order with its details and update inventory stock."""
@@ -145,36 +147,28 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
                     inventory_item.id_key, {"current_stock": new_stock}
                 )
 
-    def _calculate_estimated_time(self, order_id: int) -> int:
+    def _calculate_estimated_time(self, order_id: int) -> float:
         """Calculate estimated time for order preparation."""
         order = self.get_one(order_id)
 
-        max_prep_time = 0
-        for detail in order.details:
-            manufactured_item = self.manufactured_item_service.get_one(
+        items_prep_time = sum(
+            self.manufactured_item_repository.find(
                 detail.manufactured_item.id_key
-            )
-            max_prep_time = max(max_prep_time, manufactured_item.preparation_time)
+            ).preparation_time
+            for detail in order.details
+        )
 
-        orders_in_kitchen = self.repository.find_by_status(
+        kitchen_orders = self.repository.find_by_status(
             OrderStatus.en_cocina, offset=0, limit=100
         )
-        kitchen_prep_time = 0
-        if orders_in_kitchen:
-            for kitchen_order in orders_in_kitchen:
-                for detail in kitchen_order.details:
-                    manufactured_item = self.manufactured_item_service.get_one(
-                        detail.manufactured_item.id_key
-                    )
-                    kitchen_prep_time = max(
-                        kitchen_prep_time, manufactured_item.preparation_time
-                    )
+        kitchen_prep_time = sum(order.estimated_time for order in kitchen_orders or [])
+        cook_count = self.user_repository.count_all_cookies() or 1
 
-        delivery_time = 10 if order.delivery_method == DeliveryMethod.delivery else 0
+        delivery_time = (
+            10 if order.delivery_method == DeliveryMethod.delivery.value else 0
+        )
 
-        total_time = max_prep_time + kitchen_prep_time + delivery_time
-
-        return total_time
+        return items_prep_time + (kitchen_prep_time / cook_count) + delivery_time
 
     def get_by_status(
         self, status: OrderStatus, offset: int = 0, limit: int = 10

@@ -64,3 +64,14 @@ class UserRepository(BaseRepositoryImplementation):
                 .all()
             )
             return [self.schema.model_validate(client) for client in clients]
+
+    def count_all_cookies(self) -> int:
+        """Get all users with cook roles."""
+        with self.session_scope() as session:
+            count = (
+                session.query(self.model)
+                .filter(self.model.role == UserRole.cocinero)
+                .filter(self.model.active.is_(True))
+                .count()
+            )
+            return count
