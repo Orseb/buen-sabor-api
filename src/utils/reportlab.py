@@ -21,11 +21,14 @@ def generate_pdf_report(invoice_data: dict, filename: str, invoice_type: str):
     )
     elements.append(Spacer(1, 12))
 
-    table_data = [["Item", "Quantity", "Unit Price", "Total"]]
+    table_data = [
+        ["Producto", "Tipo de Producto", "Cantidad", "Precio Unitario", "Total"]
+    ]
     for item in invoice_data["items"]:
         table_data.append(
             [
                 item["name"],
+                item["type"],
                 str(item["quantity"]),
                 f"${item['unit_price']:.2f}",
                 f"${item['total']:.2f}",

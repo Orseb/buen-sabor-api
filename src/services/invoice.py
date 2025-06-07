@@ -2,9 +2,12 @@ import uuid
 from datetime import datetime
 
 from src.models.invoice import InvoiceModel, InvoiceType
+from src.models.order import OrderStatus
 from src.repositories.invoice import InvoiceRepository
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
+from src.schemas.invoice_detail import CreateInvoiceDetailSchema
 from src.services.base_implementation import BaseServiceImplementation
+from src.services.invoice_detail import InvoiceDetailService
 
 
 class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSchema]):
@@ -20,6 +23,7 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         )
         self._order_service = None
         self._inventory_item_service = None
+        self.invoice_detail_service = InvoiceDetailService()
 
     @property
     def order_service(self):
@@ -40,24 +44,53 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         return self._inventory_item_service
 
     def generate_invoice(self, order_id: int) -> ResponseInvoiceSchema:
-        """Generate an invoice for an order."""
+        """Generate an invoice for an order with detailed line items."""
         order = self.order_service.get_one(order_id)
 
         invoice_number = (
             f"INV-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
         )
 
-        self.order_service.update_status(order_id, "facturado")
-
-        return self.save(
-            CreateInvoiceSchema(
-                number=invoice_number,
-                date=datetime.now(),
-                total=order.final_total,
-                type=InvoiceType.factura,
-                order_id=order_id,
-            )
+        invoice_schema = CreateInvoiceSchema(
+            number=invoice_number,
+            date=datetime.now(),
+            total=order.final_total,
+            type=InvoiceType.factura,
+            order_id=order_id,
         )
+
+        invoice_details = []
+
+        for detail in order.details:
+            invoice_detail = CreateInvoiceDetailSchema(
+                item_name=detail.manufactured_item.name,
+                quantity=detail.quantity,
+                unit_price=detail.unit_price,
+                subtotal=detail.subtotal,
+                item_type="Manufacturado",
+                manufactured_item_id=detail.manufactured_item.id_key,
+            )
+            invoice_details.append(invoice_detail)
+
+        for detail in order.inventory_details:
+            invoice_detail = CreateInvoiceDetailSchema(
+                item_name=detail.inventory_item.name,
+                quantity=detail.quantity,
+                unit_price=detail.unit_price,
+                subtotal=detail.subtotal,
+                item_type="Insumo",
+                inventory_item_id=detail.inventory_item.id_key,
+            )
+            invoice_details.append(invoice_detail)
+
+        invoice_model = self.to_model(invoice_schema)
+        saved_invoice = self.repository.save_with_details(
+            invoice_model, invoice_details
+        )
+
+        self.order_service.update_status(order_id, OrderStatus.facturado)
+
+        return saved_invoice
 
     def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
         """Generate a credit note for an invoice."""

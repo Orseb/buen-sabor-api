@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Optional
+from typing import List, Optional
 
 from src.models.invoice import InvoiceType
 from src.schemas.base import BaseSchema
+from src.schemas.invoice_detail import ResponseInvoiceDetailSchema
 from src.schemas.order import ResponseOrderSchema
 
 
@@ -20,4 +21,5 @@ class CreateInvoiceSchema(BaseInvoiceSchema):
 
 class ResponseInvoiceSchema(BaseInvoiceSchema):
     order: ResponseOrderSchema
+    details: List[ResponseInvoiceDetailSchema] = []
     id_key: int

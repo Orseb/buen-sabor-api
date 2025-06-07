@@ -27,3 +27,4 @@ class InvoiceModel(BaseModel):
         nullable=False,
     )
     order = relationship("OrderModel", back_populates="invoice")
+    details = relationship("InvoiceDetailModel", back_populates="invoice")

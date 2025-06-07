@@ -35,31 +35,22 @@ class InvoiceController(BaseControllerImplementation):
         ):
             invoice = self.service.get_one(id_key)
 
-            invoice_manufactured_items = [
+            invoice_items = [
                 {
-                    "name": detail.manufactured_item.name,
+                    "name": detail.item_name,
                     "quantity": detail.quantity,
                     "unit_price": detail.unit_price,
+                    "type": detail.item_type,
                     "total": detail.subtotal,
                 }
-                for detail in invoice.order.details
-            ]
-
-            invoice_inventory_items = [
-                {
-                    "name": item.inventory_item.name,
-                    "quantity": item.quantity,
-                    "unit_price": item.unit_price,
-                    "total": item.subtotal,
-                }
-                for item in invoice.order.inventory_details
+                for detail in invoice.details
             ]
 
             invoice_data = {
                 "number": invoice.number,
                 "date": invoice.date,
                 "user_name": invoice.order.user.full_name,
-                "items": invoice_manufactured_items + invoice_inventory_items,
+                "items": invoice_items,
                 "subtotal": invoice.order.total,
                 "discount": invoice.order.discount,
                 "total": invoice.total,

@@ -156,6 +156,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
             self.manufactured_item_repository.find(
                 detail.manufactured_item_id
             ).preparation_time
+            * detail.quantity
             for detail in order_details
         )
 
