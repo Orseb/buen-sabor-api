@@ -1,6 +1,6 @@
 import enum
 
-from sqlalchemy import Column, Enum, String
+from sqlalchemy import Boolean, Column, Enum, String
 from sqlalchemy.orm import relationship
 
 from src.models.base import BaseModel
@@ -26,3 +26,4 @@ class UserModel(BaseModel):
     addresses = relationship("AddressModel", back_populates="user")
     orders = relationship("OrderModel", back_populates="user")
     image_url = Column(String)
+    first_login = Column(Boolean, default=False)

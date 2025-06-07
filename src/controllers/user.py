@@ -1,12 +1,13 @@
 from typing import Any, Dict
 
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
 from src.schemas.pagination import PaginatedResponseSchema
 from src.schemas.user import CreateUserSchema, ResponseUserSchema
 from src.services.user import UserService
+from src.utils.auth import hash_password
 from src.utils.rbac import get_current_user, has_role
 
 
@@ -43,3 +44,20 @@ class UserController(BaseControllerImplementation):
             current_user: Dict[str, Any] = Depends(get_current_user),
         ):
             return self.service.update(current_user["id"], schema_in)
+
+        @self.router.put("/employee/password", response_model=self.response_schema)
+        async def update_employee_password(
+            password: str,
+            current_user: Dict[str, Any] = Depends(get_current_user),
+        ):
+            """Update the password of an employee."""
+            employee = self.service.get_one(current_user["id"])
+            if not employee.first_login:
+                raise HTTPException(
+                    status_code=400,
+                    detail="You can only change the password on your first login.",
+                )
+
+            return self.service.update_employee_password(
+                current_user["id"], hash_password(password)
+            )

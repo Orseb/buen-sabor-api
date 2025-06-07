@@ -24,6 +24,7 @@ class CreateUserSchema(BaseUserSchema):
     google_sub: Optional[str] = None
     active: Optional[bool] = True
     image_url: Optional[str] = None
+    first_login: Optional[bool] = False
 
     @field_validator("password")
     def hash_password(cls, value: Optional[str]) -> Optional[str]:

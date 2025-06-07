@@ -72,3 +72,11 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
         )
+
+    def update_employee_password(
+        self, id_key: int, new_password: str
+    ) -> ResponseUserSchema:
+        """Update the password of an employee."""
+        return self.repository.update(
+            id_key, {"password": new_password, "first_login": False}
+        )
