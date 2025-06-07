@@ -21,13 +21,13 @@ class InvoiceController(BaseControllerImplementation):
         )
 
         @self.router.post(
-            "/credit-note/{invoice_id}",
+            "/credit-note/{id_key}",
             response_model=ResponseInvoiceSchema,
         )
         async def generate_credit_note(
-            invoice_id: int, current_user: dict = Depends(get_current_user)
+            id_key: int, current_user: dict = Depends(get_current_user)
         ):
-            return self.service.generate_credit_note(invoice_id)
+            return self.service.generate_credit_note(id_key)
 
         @self.router.get("/report/{id_key}")
         async def get_invoice_report(
