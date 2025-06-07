@@ -1,8 +1,10 @@
 from datetime import datetime
 
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, Depends, Query
 
+from src.models.user import UserRole
 from src.services.report import ReportService
+from src.utils.rbac import has_role
 
 
 class ReportController:
@@ -15,6 +17,7 @@ class ReportController:
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
             limit: int = Query(10),
+            current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_top_products(start_date, end_date, limit)
 
@@ -23,6 +26,7 @@ class ReportController:
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
             limit: int = Query(10),
+            current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_top_customers(start_date, end_date, limit)
 
@@ -30,6 +34,7 @@ class ReportController:
         async def get_revenue(
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
+            current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_revenue_by_period(start_date, end_date)
 
@@ -38,6 +43,7 @@ class ReportController:
             user_id: int,
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
+            current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_orders_by_customer(user_id, start_date, end_date)
 
@@ -45,5 +51,6 @@ class ReportController:
         async def get_inventory_expenses(
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
+            current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_inventory_expenses(start_date, end_date)
