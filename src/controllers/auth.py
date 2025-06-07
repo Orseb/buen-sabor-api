@@ -31,7 +31,7 @@ async def register(
 @router.post("/login")
 async def login(
     user: LoginRequest, user_service: UserService = Depends(get_user_service)
-) -> Dict[str, str]:
+) -> Dict[str, str | bool]:
     """Authenticate a user and return an access token."""
     authenticated_user = authenticate_user(user.email, user.password, user_service)
     if not authenticated_user:
@@ -42,7 +42,8 @@ async def login(
     return {
         "access_token": create_access_token(
             authenticated_user.email, authenticated_user.id_key, authenticated_user.role
-        )
+        ),
+        "first_login": authenticated_user.first_login,
     }
 
 
