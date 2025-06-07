@@ -112,7 +112,7 @@ class ReportService:
     def get_revenue_by_period(
         self, start_date: datetime, end_date: datetime
     ) -> Dict[str, Any]:
-        """Get revenue, costs and profit in a date range."""
+        """Get revenue, costs, profit, and total amounts in a date range."""
         with self.invoice_repository.session_scope() as session:
             revenue_results = (
                 session.query(func.sum(InvoiceModel.total).label("total_revenue"))
@@ -124,6 +124,17 @@ class ReportService:
                 .first()
             )
 
+            invoice_count_results = (
+                session.query(func.count(InvoiceModel.id_key).label("invoice_count"))
+                .filter(
+                    InvoiceModel.date >= start_date,
+                    InvoiceModel.date <= end_date,
+                    InvoiceModel.type == InvoiceType.factura,
+                )
+                .first()
+            )
+
+        with self.inventory_purchase_repository.session_scope() as session:
             purchase_costs_results = (
                 session.query(
                     func.sum(InventoryPurchaseModel.total_cost).label("purchase_costs")
@@ -135,20 +146,35 @@ class ReportService:
                 .first()
             )
 
-            total_revenue = revenue_results[0] or 0
-            total_expenses = purchase_costs_results[0] or 0
+            purchase_count_results = (
+                session.query(
+                    func.count(InventoryPurchaseModel.id_key).label("purchase_count")
+                )
+                .filter(
+                    InventoryPurchaseModel.purchase_date >= start_date,
+                    InventoryPurchaseModel.purchase_date <= end_date,
+                )
+                .first()
+            )
 
-            profit = total_revenue - total_expenses
-            profit_margin = (profit / total_revenue * 100) if total_revenue > 0 else 0
+        total_revenue = revenue_results[0] or 0
+        total_expenses = purchase_costs_results[0] or 0
+        total_invoices = invoice_count_results[0] or 0
+        total_purchases = purchase_count_results[0] or 0
 
-            return {
-                "revenue": total_revenue,
-                "total_expenses": total_expenses,
-                "profit": profit,
-                "profit_margin_percentage": profit_margin,
-                "start_date": start_date,
-                "end_date": end_date,
-            }
+        profit = total_revenue - total_expenses
+        profit_margin = (profit / total_revenue * 100) if total_revenue > 0 else 0
+
+        return {
+            "revenue": total_revenue,
+            "total_expenses": total_expenses,
+            "profit": profit,
+            "profit_margin_percentage": profit_margin,
+            "total_invoices": total_invoices,
+            "total_inventory_purchases": total_purchases,
+            "start_date": start_date,
+            "end_date": end_date,
+        }
 
     def get_excel_revenue_report(
         self, start_date: datetime, end_date: datetime, buffer: BytesIO
