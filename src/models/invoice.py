@@ -27,15 +27,3 @@ class InvoiceModel(BaseModel):
         nullable=False,
     )
     order = relationship("OrderModel", back_populates="invoice")
-
-    original_invoice_id = Column(
-        Integer,
-        ForeignKey("invoice.id_key", ondelete="CASCADE"),
-        nullable=True,
-    )
-    credit_notes = relationship(
-        "InvoiceModel",
-        backref="original_invoice",
-        remote_side="InvoiceModel.id_key",
-        foreign_keys=[original_invoice_id],
-    )

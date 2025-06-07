@@ -16,10 +16,8 @@ class BaseInvoiceSchema(BaseSchema):
 
 class CreateInvoiceSchema(BaseInvoiceSchema):
     order_id: int
-    original_invoice_id: Optional[int] = None
 
 
 class ResponseInvoiceSchema(BaseInvoiceSchema):
     order: ResponseOrderSchema
-    original_invoice_id: Optional[int] = None
     id_key: int
