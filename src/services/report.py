@@ -1,4 +1,5 @@
 from datetime import datetime
+from io import BytesIO
 from typing import Any, Dict, List
 
 from sqlalchemy import desc, func
@@ -10,9 +11,11 @@ from src.models.manufactured_item import ManufacturedItemModel
 from src.models.order import OrderModel
 from src.models.order_detail import OrderDetailModel
 from src.models.user import UserModel
+from src.repositories.inventory_purchase import InventoryPurchaseRepository
 from src.repositories.invoice import InvoiceRepository
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
+from src.utils.openpyxl import generate_excel_report
 
 
 class ReportService:
@@ -20,6 +23,7 @@ class ReportService:
 
     def __init__(self):
         """Initialize the report service with repositories."""
+        self.inventory_purchase_repository = InventoryPurchaseRepository()
         self.order_repository = OrderRepository()
         self.order_detail_repository = OrderDetailRepository()
         self.invoice_repository = InvoiceRepository()
@@ -120,16 +124,6 @@ class ReportService:
                 .first()
             )
 
-            credit_note_results = (
-                session.query(func.sum(InvoiceModel.total).label("total_credit_notes"))
-                .filter(
-                    InvoiceModel.date >= start_date,
-                    InvoiceModel.date <= end_date,
-                    InvoiceModel.type == InvoiceType.nota_credito,
-                )
-                .first()
-            )
-
             purchase_costs_results = (
                 session.query(
                     func.sum(InventoryPurchaseModel.total_cost).label("purchase_costs")
@@ -142,21 +136,64 @@ class ReportService:
             )
 
             total_revenue = revenue_results[0] or 0
-            total_credit_notes = credit_note_results[0] or 0
             total_expenses = purchase_costs_results[0] or 0
 
-            net_revenue = total_revenue - total_credit_notes
-            profit = net_revenue - total_expenses
-            profit_margin = (profit / net_revenue * 100) if net_revenue > 0 else 0
+            profit = total_revenue - total_expenses
+            profit_margin = (profit / total_revenue * 100) if total_revenue > 0 else 0
 
             return {
-                "revenue": net_revenue,
+                "revenue": total_revenue,
                 "total_expenses": total_expenses,
                 "profit": profit,
                 "profit_margin_percentage": profit_margin,
                 "start_date": start_date,
                 "end_date": end_date,
             }
+
+    def get_excel_revenue_report(
+        self, start_date: datetime, end_date: datetime, buffer: BytesIO
+    ) -> str:
+        """Generate an Excel report for movements, costs, and revenues."""
+        with self.inventory_purchase_repository.session_scope() as session:
+            purchases = (
+                session.query(
+                    InventoryPurchaseModel.purchase_date,
+                    InventoryPurchaseModel.quantity,
+                    InventoryPurchaseModel.total_cost,
+                    InventoryItemModel.name,
+                )
+                .join(InventoryItemModel)
+                .filter(
+                    (
+                        InventoryPurchaseModel.purchase_date >= start_date
+                        if start_date
+                        else True
+                    ),
+                    (
+                        InventoryPurchaseModel.purchase_date <= end_date
+                        if end_date
+                        else True
+                    ),
+                )
+                .all()
+            )
+
+        with self.invoice_repository.session_scope() as session:
+            invoices = (
+                session.query(
+                    InvoiceModel.date,
+                    InvoiceModel.total,
+                    InvoiceModel.type,
+                )
+                .filter(
+                    InvoiceModel.date >= start_date if start_date else True,
+                    InvoiceModel.date <= end_date if end_date else True,
+                    InvoiceModel.type == InvoiceType.factura,
+                )
+                .all()
+            )
+
+        generate_excel_report(buffer, purchases, invoices, start_date, end_date)
 
     def get_orders_by_customer(
         self, user_id: int, start_date: datetime, end_date: datetime
