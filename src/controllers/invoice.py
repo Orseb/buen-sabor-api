@@ -1,11 +1,13 @@
 import io
 
-from fastapi import HTTPException
+from fastapi import Depends
 from fastapi.responses import StreamingResponse
 
 from src.controllers.base_implementation import BaseControllerImplementation
+from src.models.invoice import InvoiceType
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.services.invoice import InvoiceService
+from src.utils.rbac import get_current_user
 from src.utils.reportlab import generate_pdf_report
 
 
@@ -19,20 +21,19 @@ class InvoiceController(BaseControllerImplementation):
         )
 
         @self.router.post(
-            "/credit-note/{invoice_id}", response_model=ResponseInvoiceSchema
+            "/credit-note/{invoice_id}",
+            response_model=ResponseInvoiceSchema,
         )
-        async def generate_credit_note(invoice_id: int):
+        async def generate_credit_note(
+            invoice_id: int, current_user: dict = Depends(get_current_user)
+        ):
             return self.service.generate_credit_note(invoice_id)
 
         @self.router.get("/report/{id_key}")
-        async def get_invoice_report(id_key: int):
+        async def get_invoice_report(
+            id_key: int, current_user: dict = Depends(get_current_user)
+        ):
             invoice = self.service.get_one(id_key)
-
-            if invoice.original_invoice_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="Cannot generate report for a credit note invoice.",
-                )
 
             invoice_manufactured_items = [
                 {
@@ -65,65 +66,18 @@ class InvoiceController(BaseControllerImplementation):
             }
 
             buffer = io.BytesIO()
-            generate_pdf_report(invoice_data, buffer, "Factura")
+
+            if invoice.type == InvoiceType.factura.value:
+                generate_pdf_report(invoice_data, buffer, "Factura")
+                filename = f"invoice_{id_key}.pdf"
+            else:
+                generate_pdf_report(invoice_data, buffer, "Nota de Crédito")
+                filename = f"credit_note_{id_key}.pdf"
+
             buffer.seek(0)
 
             return StreamingResponse(
                 buffer,
                 media_type="application/pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename=invoice_{id_key}.pdf"
-                },
-            )
-
-        @self.router.get("/note-report/{id_key}")
-        async def get_credit_note_report(id_key: int):
-            credit_note = self.service.get_one(id_key)
-
-            if not credit_note.original_invoice_id:
-                raise HTTPException(
-                    status_code=400,
-                    detail="This is not a credit note invoice.",
-                )
-
-            credit_note_manufactured_items = [
-                {
-                    "name": detail.manufactured_item.name,
-                    "quantity": detail.quantity,
-                    "unit_price": detail.unit_price,
-                    "total": detail.subtotal,
-                }
-                for detail in credit_note.order.details
-            ]
-
-            credit_note_inventory_items = [
-                {
-                    "name": item.inventory_item.name,
-                    "quantity": item.quantity,
-                    "unit_price": item.unit_price,
-                    "total": item.subtotal,
-                }
-                for item in credit_note.order.inventory_details
-            ]
-
-            credit_note_data = {
-                "number": credit_note.number,
-                "date": credit_note.date,
-                "user_name": credit_note.order.user.full_name,
-                "items": credit_note_manufactured_items + credit_note_inventory_items,
-                "subtotal": credit_note.order.total,
-                "discount": credit_note.order.discount,
-                "total": credit_note.total,
-            }
-
-            buffer = io.BytesIO()
-            generate_pdf_report(credit_note_data, buffer, "Nota de Crédito")
-            buffer.seek(0)
-
-            return StreamingResponse(
-                buffer,
-                media_type="application/pdf",
-                headers={
-                    "Content-Disposition": f"attachment; filename=credit_note_{id_key}.pdf"
-                },
+                headers={"Content-Disposition": f"attachment; filename={filename}"},
             )

@@ -61,27 +61,18 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
 
     def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
         """Generate a credit note for an invoice."""
-        invoice = self.get_one(invoice_id)
-        order = self.order_service.get_one(invoice.order.id_key)
+        invoice = self.repository.find(invoice_id)
+        self._restore_inventory_stock(invoice.order.id_key)
 
-        credit_note_number = (
-            f"NC-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
+        updated_invoice = self.repository.update(
+            invoice_id,
+            {
+                "number": invoice.number.replace("INV", "NC"),
+                "type": InvoiceType.nota_credito,
+            },
         )
 
-        credit_note = self.save(
-            CreateInvoiceSchema(
-                number=credit_note_number,
-                date=datetime.now(),
-                total=invoice.total,
-                type=InvoiceType.nota_credito,
-                order_id=order.id_key,
-                original_invoice_id=invoice_id,
-            )
-        )
-
-        self._restore_inventory_stock(order.id_key)
-
-        return credit_note
+        return updated_invoice
 
     def _restore_inventory_stock(self, order_id: int) -> None:
         """Restore inventory stock based on order details."""
