@@ -1,8 +1,6 @@
 from typing import List
 
 from src.models.order import DeliveryMethod, OrderModel, OrderStatus
-from src.models.order_detail import OrderDetailModel
-from src.models.order_inventory_detail import OrderInventoryDetailModel
 from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.repositories.order import OrderRepository
@@ -42,120 +40,123 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
     def save(self, schema: CreateOrderSchema) -> ResponseOrderSchema:
         """Save an order with its details and update inventory stock."""
-        details = schema.details
-        inventory_details = schema.inventory_details
+        details = self._process_details(schema.details)
+        inventory_details = self._process_inventory_details(schema.inventory_details)
+
         schema_dict = schema.model_dump()
-
-        schema_dict["total"] = self._calculate_order_total(details, inventory_details)
-        schema_dict["discount"] = (
-            schema_dict["total"] * 0.1
-            if schema.delivery_method == DeliveryMethod.pickup.value
-            else 0.0
+        schema_dict.update(
+            self._calculate_totals(schema.delivery_method, details, inventory_details)
         )
-        schema_dict["final_total"] = schema_dict["total"] - schema_dict["discount"]
-
         schema_dict.pop("details", None)
         schema_dict.pop("inventory_details", None)
 
-        order = self.repository.save(OrderModel(**schema_dict))
+        return self.repository.save_with_details(
+            OrderModel(**schema_dict), details, inventory_details
+        )
 
-        self._save_order_details(details, order.id_key)
-        self._save_order_inventory_details(inventory_details, order.id_key)
-        self._update_inventory_stock(details, order.id_key)
-
-        estimated_time = self._calculate_estimated_time(order.id_key)
-
-        return self.update(order.id_key, {"estimated_time": estimated_time})
-
-    def _calculate_order_total(
-        self,
-        details: List[CreateOrderDetailSchema],
-        inventory_details: List[CreateOrderInventoryDetailSchema],
-    ) -> float:
-        order_total = 0
+    def _process_details(
+        self, details: List[CreateOrderDetailSchema]
+    ) -> List[CreateOrderDetailSchema]:
         for detail in details:
-            order_total += (
-                self.manufactured_item_repository.find(
-                    detail.manufactured_item_id
-                ).price
-                * detail.quantity
-            )
-
-        for detail in inventory_details:
-            order_total += (
-                self.inventory_item_repository.find(detail.inventory_item_id).price
-                * detail.quantity
-            )
-
-        return order_total
-
-    def _save_order_details(
-        self, details: List[CreateOrderDetailSchema], order_id: int
-    ) -> None:
-        """Save order details."""
-        for detail in details:
-            detail_dict = detail.model_dump()
-            detail_dict["order_id"] = order_id
-            detail_dict["unit_price"] = self.manufactured_item_repository.find(
+            detail.unit_price = self.manufactured_item_repository.find(
                 detail.manufactured_item_id
             ).price
-            detail_dict["subtotal"] = detail_dict["unit_price"] * detail.quantity
-            detail_model = OrderDetailModel(**detail_dict)
-            self.order_detail_repository.save(detail_model)
+            detail.subtotal = detail.unit_price * detail.quantity
+            self._update_detail_stock(detail)
 
-    def _save_order_inventory_details(
-        self, inventory_details: List[CreateOrderInventoryDetailSchema], order_id: int
-    ) -> None:
-        """Save order inventory details."""
+        return details
+
+    def _process_inventory_details(
+        self, inventory_details: List[CreateOrderInventoryDetailSchema]
+    ) -> List[CreateOrderInventoryDetailSchema]:
         for detail in inventory_details:
-            detail_dict = detail.model_dump()
-            detail_dict["order_id"] = order_id
-            detail_dict["unit_price"] = self.inventory_item_repository.find(
+            detail.unit_price = self.inventory_item_repository.find(
                 detail.inventory_item_id
             ).price
-            detail_dict["subtotal"] = detail_dict["unit_price"] * detail.quantity
-            detail_model = OrderInventoryDetailModel(**detail_dict)
-            self.order_inventory_detail_repository.save(detail_model)
+            detail.subtotal = detail.unit_price * detail.quantity
+            self._update_inventory_detail_stock(detail)
 
-    def _update_inventory_stock(
-        self, details: List[CreateOrderDetailSchema], order_id: int
-    ) -> None:
+        return inventory_details
+
+    def _update_detail_stock(self, detail: CreateOrderDetailSchema) -> None:
         """Update inventory stock based on order details."""
-        for detail in details:
-            manufactured_item = self.manufactured_item_service.get_one(
-                detail.manufactured_item_id
+        manufactured_item = self.manufactured_item_repository.find(
+            detail.manufactured_item_id
+        )
+        for item_detail in manufactured_item.details:
+            inventory_item = self.inventory_item_service.get_one(
+                item_detail.inventory_item.id_key
             )
 
-            for item_detail in manufactured_item.details:
-                inventory_item = self.inventory_item_service.get_one(
-                    item_detail.inventory_item.id_key
-                )
+            quantity_to_subtract = item_detail.quantity * detail.quantity
 
-                quantity_to_subtract = item_detail.quantity * detail.quantity
+            if (
+                inventory_item.current_stock < quantity_to_subtract
+                or inventory_item.current_stock - quantity_to_subtract
+                < inventory_item.minimum_stock
+            ):
+                raise ValueError(f"Insufficient stock for item {inventory_item.name}.")
 
-                if (
-                    inventory_item.current_stock < quantity_to_subtract
-                    or inventory_item.current_stock - quantity_to_subtract
-                    < inventory_item.minimum_stock
-                ):
-                    raise ValueError(
-                        f"Insufficient stock for item {inventory_item.name} in order {order_id}."
-                    )
+            new_stock = max(0, inventory_item.current_stock - quantity_to_subtract)
 
-                new_stock = max(0, inventory_item.current_stock - quantity_to_subtract)
-                self.inventory_item_service.update(
-                    inventory_item.id_key, {"current_stock": new_stock}
-                )
+            self.inventory_item_service.update(
+                inventory_item.id_key, {"current_stock": new_stock}
+            )
 
-    def _calculate_estimated_time(self, order_id: int) -> float:
+    def _update_inventory_detail_stock(
+        self, inventory_detail: CreateOrderInventoryDetailSchema
+    ) -> None:
+        """Update inventory stock based on order inventory details."""
+        inventory_item = self.inventory_item_repository.find(
+            inventory_detail.inventory_item_id
+        )
+        quantity_to_subtract = inventory_detail.quantity
+
+        if (
+            inventory_item.current_stock < quantity_to_subtract
+            or inventory_item.current_stock - quantity_to_subtract
+            < inventory_item.minimum_stock
+        ):
+            raise ValueError(f"Insufficient stock for item {inventory_item.name}.")
+
+        new_stock = max(0, inventory_item.current_stock - quantity_to_subtract)
+        self.inventory_item_service.update(
+            inventory_item.id_key, {"current_stock": new_stock}
+        )
+
+    def _calculate_totals(
+        self,
+        delivery_method: DeliveryMethod,
+        details: List[CreateOrderDetailSchema],
+        inventory_details: List[CreateOrderInventoryDetailSchema],
+    ) -> dict:
+        """Calculate order totals, discount, and final total."""
+        total = sum(detail.subtotal for detail in details) + sum(
+            inventory_detail.subtotal for inventory_detail in inventory_details
+        )
+        discount = (
+            total * 0.1 if delivery_method == DeliveryMethod.pickup.value else 0.0
+        )
+        final_total = total - discount
+        estimated_time = self._calculate_estimated_time(delivery_method, details)
+        return {
+            "total": total,
+            "discount": discount,
+            "final_total": final_total,
+            "estimated_time": estimated_time,
+        }
+
+    def _calculate_estimated_time(
+        self,
+        delivery_method: DeliveryMethod,
+        order_details: List[CreateOrderDetailSchema],
+    ) -> float:
         """Calculate estimated time for order preparation."""
-        order = self.get_one(order_id)
-
         items_prep_time = sum(
             self.manufactured_item_repository.find(
-                detail.manufactured_item.id_key
+                detail.manufactured_item_id
             ).preparation_time
-            for detail in order.details
+            for detail in order_details
         )
 
         kitchen_orders = self.repository.find_by_status(
@@ -164,9 +165,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         kitchen_prep_time = sum(order.estimated_time for order in kitchen_orders or [])
         cook_count = self.user_repository.count_all_cookies() or 1
 
-        delivery_time = (
-            10 if order.delivery_method == DeliveryMethod.delivery.value else 0
-        )
+        delivery_time = 10 if delivery_method == DeliveryMethod.delivery.value else 0
 
         return items_prep_time + (kitchen_prep_time / cook_count) + delivery_time
 

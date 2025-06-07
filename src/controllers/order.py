@@ -8,6 +8,7 @@ from src.models.user import UserRole
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.address import AddressService
+from src.services.inventory_item import InventoryItemService
 from src.services.invoice import InvoiceService
 from src.services.order import OrderService
 from src.utils.rbac import get_current_user, has_role
@@ -34,6 +35,7 @@ class OrderController(
         )
         self.invoice_service = InvoiceService()
         self.address_service = AddressService()
+        self.inventory_item_service = InventoryItemService()
 
         @self.router.post("/generate", response_model=ResponseOrderSchema)
         async def create_order(
@@ -46,6 +48,16 @@ class OrderController(
                     status_code=400,
                     detail="Order must have at least one detail or inventory detail.",
                 )
+
+            for detail in order.inventory_details:
+                inventory_item = self.inventory_item_service.get_one(
+                    detail.inventory_item_id
+                )
+                if inventory_item.is_ingredient:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Inventory detail cannot be an ingredient.",
+                    )
 
             order.user_id = current_user["id"]
 

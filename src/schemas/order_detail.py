@@ -10,6 +10,8 @@ class BaseOrderDetailSchema(BaseSchema):
 
 class CreateOrderDetailSchema(BaseOrderDetailSchema):
     order_id: Optional[int] = None
+    unit_price: Optional[float] = None
+    subtotal: Optional[float] = None
     manufactured_item_id: int
 
 

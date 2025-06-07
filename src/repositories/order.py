@@ -5,7 +5,11 @@ from sqlalchemy import desc
 
 from src.models.invoice import InvoiceModel, InvoiceType
 from src.models.order import OrderModel, OrderStatus
+from src.models.order_detail import OrderDetailModel
+from src.models.order_inventory_detail import OrderInventoryDetailModel
 from src.repositories.base_implementation import BaseRepositoryImplementation
+from src.repositories.inventory_item import InventoryItemRepository
+from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 
 
@@ -16,6 +20,33 @@ class OrderRepository(BaseRepositoryImplementation):
             create_schema=CreateOrderSchema,
             response_schema=ResponseOrderSchema,
         )
+        self.manufactured_item_repository = ManufacturedItemRepository()
+        self.inventory_item_repository = InventoryItemRepository()
+
+    def save_with_details(
+        self, order_model, details, inventory_details
+    ) -> ResponseOrderSchema:
+        """Save an order along with its details."""
+        with self.session_scope() as session:
+            session.add(order_model)
+            session.flush()
+
+            for detail in details:
+                detail_dict = detail.model_dump()
+                detail_dict["order_id"] = order_model.id_key
+                detail_model = OrderDetailModel(**detail_dict)
+                session.add(detail_model)
+
+            for detail in inventory_details:
+                detail_dict = detail.model_dump()
+                detail_dict["order_id"] = order_model.id_key
+                inventory_detail_model = OrderInventoryDetailModel(**detail_dict)
+                session.add(inventory_detail_model)
+
+            session.flush()
+            session.refresh(order_model)
+
+            return self.schema.model_validate(order_model)
 
     def count_all_by_status(self, status: OrderStatus) -> int:
         with self.session_scope() as session:

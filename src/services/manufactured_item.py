@@ -35,8 +35,7 @@ class ManufacturedItemService(BaseServiceImplementation):
 
         details = schema.details
         schema.details = []
-        manufactured_item_model = self.to_model(schema)
-        return self.repository.save_with_details(manufactured_item_model, details)
+        return self.repository.save_with_details(self.to_model(schema), details)
 
     def update(
         self, id_key: int, schema: CreateManufacturedItemSchema
