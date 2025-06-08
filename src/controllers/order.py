@@ -95,7 +95,14 @@ class OrderController(
             offset: int = 0,
             limit: int = 10,
             current_user: Dict[str, Any] = Depends(
-                has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
+                has_role(
+                    [
+                        UserRole.administrador,
+                        UserRole.cajero,
+                        UserRole.cocinero,
+                        UserRole.delivery,
+                    ]
+                )
             ),
         ) -> PaginatedResponseSchema:
             """Get orders by status."""

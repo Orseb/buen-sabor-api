@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from fastapi import Depends, HTTPException
+from fastapi import Body, Depends, HTTPException
 
 from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.user import UserRole
@@ -47,7 +47,7 @@ class UserController(BaseControllerImplementation):
 
         @self.router.put("/employee/password", response_model=self.response_schema)
         async def update_employee_password(
-            password: str,
+            password: str = Body(..., embed=True),
             current_user: Dict[str, Any] = Depends(get_current_user),
         ):
             """Update the password of an employee."""
