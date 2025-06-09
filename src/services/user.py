@@ -23,7 +23,8 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
 
     def update(self, id_key: int, schema: CreateUserSchema) -> ResponseUserSchema:
         """Update a user and its image"""
-        if schema.image_url:
+        user = self.get_one(id_key)
+        if schema.image_url and schema.image_url != user.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "users"
             )

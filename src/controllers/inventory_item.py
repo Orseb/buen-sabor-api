@@ -22,11 +22,7 @@ class InventoryItemController(BaseControllerImplementation):
         )
 
         @self.router.get("/products/all", response_model=PaginatedResponseSchema)
-        def get_product_inventory_items(
-            offset: int = 0,
-            limit: int = 10,
-            current_user: Dict[str, Any] = Depends(get_current_user),
-        ):
+        def get_product_inventory_items(offset: int = 0, limit: int = 10):
             return self.service.get_all_by("is_ingredient", False, offset, limit)
 
         @self.router.get("/ingredients/all", response_model=PaginatedResponseSchema)

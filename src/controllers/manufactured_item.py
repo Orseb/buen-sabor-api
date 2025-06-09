@@ -3,6 +3,7 @@ from src.schemas.manufactured_item import (
     CreateManufacturedItemSchema,
     ResponseManufacturedItemSchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.manufactured_item import ManufacturedItemService
 
 
@@ -14,3 +15,7 @@ class ManufacturedItemController(BaseControllerImplementation):
             service=ManufacturedItemService(),
             tags=["Manufactured Item"],
         )
+
+        @self.router.get("/products/all", response_model=PaginatedResponseSchema)
+        def get_product_inventory_items(offset: int = 0, limit: int = 10):
+            return self.service.get_all(offset, limit)
