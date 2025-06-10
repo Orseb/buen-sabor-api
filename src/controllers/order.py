@@ -76,8 +76,8 @@ class OrderController(
                     detail="Mercado Pago must be selected as the payment method in delivery.",
                 )
 
-            user_addresses = self.address_service.get_user_addresses(
-                user_id=order.user_id, offset=0, limit=100
+            user_addresses = self.address_service.get_all_by(
+                "user_id", order.user_id, offset=0, limit=10
             )
             if not any(
                 addr.id_key == order.address_id for addr in user_addresses.items

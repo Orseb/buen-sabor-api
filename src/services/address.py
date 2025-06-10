@@ -6,7 +6,6 @@ from src.schemas.address import (
     UpdateAddressSchema,
 )
 from src.schemas.base import BaseSchema
-from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 
 
@@ -18,16 +17,6 @@ class AddressService(BaseServiceImplementation):
             model=AddressModel,
             create_schema=CreateAddressSchema,
             response_schema=ResponseAddressSchema,
-        )
-
-    def get_user_addresses(
-        self, offset: int, limit: int, user_id: int
-    ) -> PaginatedResponseSchema:
-        """Get all addresses for a user"""
-        total = self.repository.count_all_user_addresses(user_id)
-        items = self.repository.get_user_addresses(user_id, offset, limit)
-        return PaginatedResponseSchema(
-            total=total, offset=offset, limit=limit, items=items
         )
 
     def create_user_address(
