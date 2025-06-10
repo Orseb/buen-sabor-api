@@ -26,13 +26,7 @@ class InventoryItemCategoryController(BaseControllerImplementation):
 
     def _register_subcategory_routes(self):
         @self.router.get("/top-level/all", response_model=PaginatedResponseSchema)
-        async def get_top_level_categories(
-            offset: int = 0,
-            limit: int = 10,
-            current_user: dict = Depends(
-                has_role([UserRole.administrador, UserRole.cajero, UserRole.cocinero])
-            ),
-        ):
+        async def get_top_level_categories(offset: int = 0, limit: int = 10):
             """Get all top-level categories (those without a parent)."""
             return self.service.get_top_level_categories(offset, limit)
 
