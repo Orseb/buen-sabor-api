@@ -3,7 +3,6 @@ from src.repositories.address import AddressRepository
 from src.schemas.address import (
     CreateAddressSchema,
     ResponseAddressSchema,
-    UpdateAddressSchema,
 )
 from src.schemas.base import BaseSchema
 from src.services.base_implementation import BaseServiceImplementation
@@ -20,26 +19,25 @@ class AddressService(BaseServiceImplementation):
         )
 
     def create_user_address(
-        self, user_id: int, address: UpdateAddressSchema
+        self, user_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
         """Create a new address for a user"""
         create_schema = CreateAddressSchema(**address.model_dump(), user_id=user_id)
         return self.save(create_schema)
 
     def update_user_address(
-        self, user_id: int, address_id: int, address: UpdateAddressSchema
+        self, user_id: int, address_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
         """Update an address for a user"""
-        existing_address = self.get_one(address_id)
-        if existing_address.user_id != user_id:
-            raise ValueError("Address does not belong to the user")
-
+        self.validate_address_ownership(address_id, user_id)
         return self.update(address_id, address)
 
     def delete_user_address(self, user_id: int, address_id: int) -> BaseSchema:
         """Delete an address for a user"""
-        existing_address = self.get_one(address_id)
-        if existing_address.user_id != user_id:
-            raise ValueError("Address does not belong to the user")
-
+        self.validate_address_ownership(address_id, user_id)
         return self.delete(address_id)
+
+    def validate_address_ownership(self, address_id: int, user_id: int) -> None:
+        address = self.get_one(address_id)
+        if address.user_id != user_id:
+            raise ValueError("Address does not belong to the user")

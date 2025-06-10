@@ -4,7 +4,6 @@ from src.controllers.base_implementation import BaseControllerImplementation
 from src.schemas.address import (
     CreateAddressSchema,
     ResponseAddressSchema,
-    UpdateAddressSchema,
 )
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.address import AddressService
@@ -30,7 +29,7 @@ class AddressController(BaseControllerImplementation):
 
         @self.router.post("/user/addresses", response_model=ResponseAddressSchema)
         async def create_user_address(
-            address: UpdateAddressSchema, current_user: dict = Depends(get_current_user)
+            address: CreateAddressSchema, current_user: dict = Depends(get_current_user)
         ):
             return self.service.create_user_address(current_user["id"], address)
 
@@ -39,7 +38,7 @@ class AddressController(BaseControllerImplementation):
         )
         async def update_user_address(
             address_id: int = Path(...),
-            address: UpdateAddressSchema = None,
+            address: CreateAddressSchema = None,
             current_user: dict = Depends(get_current_user),
         ):
             return self.service.update_user_address(
