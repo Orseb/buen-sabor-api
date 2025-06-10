@@ -31,7 +31,7 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         self.router = APIRouter(tags=tags or [])
 
         if required_roles is None:
-            required_roles = [UserRole.administrador]
+            required_roles = [UserRole.administrador, UserRole.cocinero]
 
         role_dependency = has_role(required_roles)
 

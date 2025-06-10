@@ -203,3 +203,19 @@ class OrderController(
             preference_id = self.service.process_mp_payment(order)
 
             return {"payment_url": preference_id}
+
+        @self.router.put("/{id_key}/add-delay", response_model=ResponseOrderSchema)
+        async def add_delay(
+            id_key: int,
+            delay_minutes: int,
+            current_user: Dict[str, Any] = Depends(
+                has_role([UserRole.administrador, UserRole.cocinero])
+            ),
+        ) -> ResponseOrderSchema:
+            """Add a delay to an order."""
+            if delay_minutes <= 0:
+                raise HTTPException(
+                    status_code=400,
+                    detail="Delay must be a positive integer.",
+                )
+            return self.service.add_delay(id_key, delay_minutes)

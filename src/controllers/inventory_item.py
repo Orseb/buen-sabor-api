@@ -3,13 +3,14 @@ from typing import Any, Dict
 from fastapi import Depends
 
 from src.controllers.base_implementation import BaseControllerImplementation
+from src.models.user import UserRole
 from src.schemas.inventory_item import (
     CreateInventoryItemSchema,
     ResponseInventoryItemSchema,
 )
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.inventory_item import InventoryItemService
-from src.utils.rbac import get_current_user
+from src.utils.rbac import has_role
 
 
 class InventoryItemController(BaseControllerImplementation):
@@ -29,7 +30,9 @@ class InventoryItemController(BaseControllerImplementation):
         def get_ingredient_inventory_items(
             offset: int = 0,
             limit: int = 10,
-            current_user: Dict[str, Any] = Depends(get_current_user),
+            current_user: Dict[str, Any] = Depends(
+                has_role([UserRole.administrador, UserRole.cocinero])
+            ),
         ):
             return self.service.get_all_by("is_ingredient", True, offset, limit)
 
@@ -37,6 +40,8 @@ class InventoryItemController(BaseControllerImplementation):
         def update_inventory_item_image(
             id_key: int,
             image_base64: str,
-            current_user: Dict[str, Any] = Depends(get_current_user),
+            current_user: Dict[str, Any] = Depends(
+                has_role([UserRole.administrador, UserRole.cocinero])
+            ),
         ):
             return self.service.update_image(id_key, image_base64)

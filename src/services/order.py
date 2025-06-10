@@ -216,3 +216,9 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
 
         return payment_data["payment_url"]
+
+    def add_delay(self, order_id: int, delay_minutes: int) -> ResponseOrderSchema:
+        """Add a delay to the estimated time of an order."""
+        order = self.get_one(order_id)
+        new_estimated_time = order.estimated_time + delay_minutes
+        return self.update(order_id, {"estimated_time": new_estimated_time})
