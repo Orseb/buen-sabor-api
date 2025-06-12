@@ -20,7 +20,6 @@ class InventoryItemService(BaseServiceImplementation):
 
     def save(self, schema: CreateInventoryItemSchema) -> ResponseInventoryItemSchema:
         """Save an inventory item"""
-
         if schema.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "inventory_items"
@@ -28,8 +27,14 @@ class InventoryItemService(BaseServiceImplementation):
 
         return super().save(schema)
 
-    def update_image(
-        self, id_key: int, base64_image: str
+    def update(
+        self, id_key: int, schema: CreateInventoryItemSchema
     ) -> ResponseInventoryItemSchema:
-        image_url = upload_base64_image_to_cloudinary(base64_image, "inventory_items")
-        return self.repository.update(id_key, {"image_url": image_url})
+        """Update an inventory_item and its image"""
+        inventory_item = self.get_one(id_key)
+        if schema.image_url and schema.image_url != inventory_item.image_url:
+            schema.image_url = upload_base64_image_to_cloudinary(
+                schema.image_url, "inventory_items"
+            )
+
+        return super().update(id_key, schema)

@@ -41,7 +41,8 @@ class ManufacturedItemService(BaseServiceImplementation):
         self, id_key: int, schema: CreateManufacturedItemSchema
     ) -> ResponseManufacturedItemSchema:
         """Update a manufactured item with its details"""
-        if schema.image_url:
+        manufactured_item = self.get_one(id_key)
+        if schema.image_url and schema.image_url != manufactured_item.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "manufactured_items"
             )

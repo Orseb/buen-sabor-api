@@ -35,13 +35,3 @@ class InventoryItemController(BaseControllerImplementation):
             ),
         ):
             return self.service.get_all_by("is_ingredient", True, offset, limit)
-
-        @self.router.put("/{id_key}/image", response_model=ResponseInventoryItemSchema)
-        def update_inventory_item_image(
-            id_key: int,
-            image_base64: str,
-            current_user: Dict[str, Any] = Depends(
-                has_role([UserRole.administrador, UserRole.cocinero])
-            ),
-        ):
-            return self.service.update_image(id_key, image_base64)
