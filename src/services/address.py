@@ -22,8 +22,8 @@ class AddressService(BaseServiceImplementation):
         self, user_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
         """Create a new address for a user"""
-        create_schema = CreateAddressSchema(**address.model_dump(), user_id=user_id)
-        return self.save(create_schema)
+        address.user_id = user_id
+        return self.save(address)
 
     def update_user_address(
         self, user_id: int, address_id: int, address: CreateAddressSchema
