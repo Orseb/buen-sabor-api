@@ -39,7 +39,7 @@ async def login(
             status_code=HTTP_401_UNAUTHORIZED, detail="Correo o contraseña inválidos."
         )
 
-    if authenticated_user.active:
+    if not authenticated_user.active:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Usuario inactivo."
         )
