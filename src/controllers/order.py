@@ -110,12 +110,13 @@ class OrderController(
 
         @self.router.get("/user/token", response_model=PaginatedResponseSchema)
         async def get_by_user(
+            status: OrderStatus | None = None,
             offset: int = 0,
             limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> PaginatedResponseSchema:
-            """Get orders by user."""
-            return self.service.get_by_user(current_user["id"], offset, limit)
+            """Get orders by user, optionally filtered by status."""
+            return self.service.get_by_user(current_user["id"], status, offset, limit)
 
         @self.router.put("/{id_key}/status", response_model=ResponseOrderSchema)
         async def update_status(

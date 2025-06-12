@@ -55,12 +55,18 @@ class OrderRepository(BaseRepositoryImplementation):
             )
             return count
 
-    def count_all_by_user(self, user_id: int) -> int:
+    def count_all_by_user(self, user_id: int, status: OrderStatus | None) -> int:
         with self.session_scope() as session:
-            count = (
+            if status:
+                return (
+                    session.query(self.model)
+                    .filter(self.model.user_id == user_id, self.model.status == status)
+                    .count()
+                )
+
+            return (
                 session.query(self.model).filter(self.model.user_id == user_id).count()
             )
-            return count
 
     def find_by_status(
         self, status: OrderStatus, offset: int, limit: int
@@ -77,17 +83,27 @@ class OrderRepository(BaseRepositoryImplementation):
             return [self.schema.model_validate(model) for model in models]
 
     def find_by_user(
-        self, user_id: int, offset: int, limit: int
+        self, user_id: int, status: OrderStatus | None, offset: int, limit: int
     ) -> List[ResponseOrderSchema]:
         with self.session_scope() as session:
-            models = (
-                session.query(self.model)
-                .filter(self.model.user_id == user_id)
-                .order_by(desc(self.model.date))
-                .offset(offset)
-                .limit(limit)
-                .all()
-            )
+            if status:
+                models = (
+                    session.query(self.model)
+                    .filter(self.model.user_id == user_id, self.model.status == status)
+                    .order_by(desc(self.model.date))
+                    .offset(offset)
+                    .limit(limit)
+                    .all()
+                )
+            else:
+                models = (
+                    session.query(self.model)
+                    .filter(self.model.user_id == user_id)
+                    .order_by(desc(self.model.date))
+                    .offset(offset)
+                    .limit(limit)
+                    .all()
+                )
             return [self.schema.model_validate(model) for model in models]
 
     def get_orders_by_customer(

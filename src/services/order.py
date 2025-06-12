@@ -181,11 +181,11 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
 
     def get_by_user(
-        self, user_id: int, offset: int, limit: int
+        self, user_id: int, status: OrderStatus | None, offset: int, limit: int
     ) -> PaginatedResponseSchema:
         """Get orders by user."""
-        total = self.repository.count_all_by_user(user_id)
-        items = self.repository.find_by_user(user_id, offset, limit)
+        total = self.repository.count_all_by_user(user_id, status)
+        items = self.repository.find_by_user(user_id, status, offset, limit)
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
         )
