@@ -34,9 +34,14 @@ async def login(
 ) -> Dict[str, str | bool]:
     """Authenticate a user and return an access token."""
     authenticated_user = authenticate_user(user.email, user.password, user_service)
-    if not authenticated_user or not authenticated_user.active:
+    if not authenticated_user:
         raise HTTPException(
             status_code=HTTP_401_UNAUTHORIZED, detail="Correo o contraseña inválidos."
+        )
+
+    if authenticated_user.active:
+        raise HTTPException(
+            status_code=HTTP_401_UNAUTHORIZED, detail="Usuario inactivo."
         )
 
     return {
