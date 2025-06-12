@@ -39,11 +39,6 @@ async def login(
             status_code=HTTP_401_UNAUTHORIZED, detail="Correo o contraseña inválidos."
         )
 
-    if not authenticated_user.active:
-        raise HTTPException(
-            status_code=HTTP_401_UNAUTHORIZED, detail="Usuario inactivo."
-        )
-
     return {
         "access_token": create_access_token(
             authenticated_user.email, authenticated_user.id_key, authenticated_user.role
