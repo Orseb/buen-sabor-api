@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     prod_access_token: Optional[str] = None
 
     # Frontend
-    frontend_url: Optional[str] = "http://localhost:8000/docs"
+    frontend_url: Optional[str] = "http://localhost:5173"
 
     # Cloudinary
     cloudinary_api_key: Optional[str] = None
