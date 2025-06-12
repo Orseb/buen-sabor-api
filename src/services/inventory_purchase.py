@@ -2,13 +2,13 @@ from datetime import datetime
 from typing import Dict, List, Optional
 
 from src.models.inventory_purchase import InventoryPurchaseModel
+from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.inventory_purchase import InventoryPurchaseRepository
 from src.schemas.inventory_purchase import (
     CreateInventoryPurchaseSchema,
     ResponseInventoryPurchaseSchema,
 )
 from src.services.base_implementation import BaseServiceImplementation
-from src.services.inventory_item import InventoryItemService
 
 
 class InventoryPurchaseService(BaseServiceImplementation):
@@ -19,7 +19,7 @@ class InventoryPurchaseService(BaseServiceImplementation):
             create_schema=CreateInventoryPurchaseSchema,
             response_schema=ResponseInventoryPurchaseSchema,
         )
-        self.inventory_item_service = InventoryItemService()
+        self.inventory_item_repository = InventoryItemRepository()
 
     def add_stock(
         self,
@@ -29,7 +29,7 @@ class InventoryPurchaseService(BaseServiceImplementation):
         notes: Optional[str] = None,
     ) -> ResponseInventoryPurchaseSchema:
         """Add stock to an inventory item and record the purchase."""
-        inventory_item = self.inventory_item_service.get_one(inventory_item_id)
+        inventory_item = self.inventory_item_repository.find(inventory_item_id)
 
         total_cost = quantity * unit_cost
 
@@ -43,7 +43,7 @@ class InventoryPurchaseService(BaseServiceImplementation):
         )
 
         new_stock = inventory_item.current_stock + quantity
-        self.inventory_item_service.update(
+        self.inventory_item_repository.update(
             inventory_item_id, {"current_stock": new_stock, "purchase_cost": unit_cost}
         )
 
