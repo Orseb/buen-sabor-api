@@ -16,9 +16,7 @@ class InventoryItemModel(BaseModel):
     is_ingredient = Column(Boolean, nullable=False)
 
     measurement_unit_id = Column(
-        Integer,
-        ForeignKey("measurement_unit.id_key", ondelete="CASCADE"),
-        nullable=False,
+        Integer, ForeignKey("measurement_unit.id_key", ondelete="CASCADE")
     )
     measurement_unit = relationship(
         "MeasurementUnitModel", back_populates="inventory_items"

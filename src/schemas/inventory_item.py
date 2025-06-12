@@ -17,12 +17,12 @@ class BaseInventoryItemSchema(BaseSchema):
 
 
 class CreateInventoryItemSchema(BaseInventoryItemSchema):
-    measurement_unit_id: int
+    measurement_unit_id: Optional[int] = None
     category_id: int
 
 
 class ResponseInventoryItemSchema(BaseInventoryItemSchema):
-    measurement_unit: ResponseMeasurementUnitSchema
+    measurement_unit: Optional[ResponseMeasurementUnitSchema] = None
     category: ResponseInventoryItemCategorySchema
     id_key: int
 
