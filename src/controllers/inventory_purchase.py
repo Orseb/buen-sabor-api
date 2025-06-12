@@ -33,7 +33,7 @@ class InventoryPurchaseController(BaseControllerImplementation):
             unit_cost: float = Query(..., gt=0),
             notes: str = None,
             current_user: dict = Depends(
-                has_role([UserRole.administrador, UserRole.cajero])
+                has_role([UserRole.administrador, UserRole.cocinero])
             ),
         ):
             """Add stock to an inventory item and record the purchase."""
