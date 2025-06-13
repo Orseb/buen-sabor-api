@@ -29,7 +29,7 @@ class InventoryPurchaseController(BaseControllerImplementation):
         )
         async def add_stock(
             inventory_item_id: int,
-            quantity: int = Query(..., gt=0),
+            quantity: float = Query(..., gt=0),
             unit_cost: float = Query(..., gt=0),
             notes: str = None,
             current_user: dict = Depends(

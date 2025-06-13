@@ -8,8 +8,8 @@ class InventoryItemModel(BaseModel):
     __tablename__ = "inventory_item"
 
     name = Column(String, nullable=False, unique=True)
-    current_stock = Column(Integer, nullable=False)
-    minimum_stock = Column(Integer, nullable=False)
+    current_stock = Column(Float, nullable=False)
+    minimum_stock = Column(Float, nullable=False)
     price = Column(Float, nullable=False)
     purchase_cost = Column(Float, nullable=False)
     image_url = Column(String)

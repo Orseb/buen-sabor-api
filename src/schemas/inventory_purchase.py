@@ -7,7 +7,7 @@ from src.schemas.inventory_item import ResponseInventoryItemSchema
 
 class BaseInventoryPurchaseSchema(BaseSchema):
     inventory_item_id: int
-    quantity: int
+    quantity: float
     unit_cost: float
     total_cost: float
     notes: Optional[str] = None

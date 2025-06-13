@@ -15,7 +15,7 @@ class InventoryPurchaseModel(BaseModel):
     )
     inventory_item = relationship("InventoryItemModel", back_populates="purchases")
 
-    quantity = Column(Integer, nullable=False)
+    quantity = Column(Float, nullable=False)
     purchase_date = Column(DateTime, server_default=func.now(), nullable=False)
     unit_cost = Column(Float, nullable=False)
     total_cost = Column(Float, nullable=False)

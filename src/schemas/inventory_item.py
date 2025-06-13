@@ -7,8 +7,8 @@ from src.schemas.measurement_unit import ResponseMeasurementUnitSchema
 
 class BaseInventoryItemSchema(BaseSchema):
     name: str
-    current_stock: int
-    minimum_stock: int
+    current_stock: float
+    minimum_stock: float
     price: float
     purchase_cost: float
     image_url: Optional[str] = None
@@ -28,4 +28,4 @@ class ResponseInventoryItemSchema(BaseInventoryItemSchema):
 
 
 class UpdateStockInventoryItemSchema(BaseSchema):
-    current_stock: int
+    current_stock: float

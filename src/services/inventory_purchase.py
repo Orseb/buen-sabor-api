@@ -24,7 +24,7 @@ class InventoryPurchaseService(BaseServiceImplementation):
     def add_stock(
         self,
         inventory_item_id: int,
-        quantity: int,
+        quantity: float,
         unit_cost: float,
         notes: Optional[str] = None,
     ) -> ResponseInventoryPurchaseSchema:
