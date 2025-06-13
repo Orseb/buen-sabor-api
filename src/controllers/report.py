@@ -16,8 +16,8 @@ class ReportController:
 
         @self.router.get("/top-products")
         async def get_top_products(
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
+            start_date: datetime = Query(None),
+            end_date: datetime = Query(None),
             limit: int = Query(10),
             current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
@@ -25,8 +25,8 @@ class ReportController:
 
         @self.router.get("/top-customers")
         async def get_top_customers(
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
+            start_date: datetime = Query(None),
+            end_date: datetime = Query(None),
             limit: int = Query(10),
             current_user: dict = Depends(has_role([UserRole.administrador])),
         ):

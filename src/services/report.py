@@ -41,8 +41,8 @@ class ReportService:
                 )
                 .join(OrderModel)
                 .filter(
-                    OrderModel.date >= start_date,
-                    OrderModel.date <= end_date,
+                    OrderModel.date >= start_date if start_date else True,
+                    OrderModel.date <= end_date if end_date else True,
                     OrderModel.status == "entregado",
                 )
                 .group_by(OrderDetailModel.manufactured_item_id)
@@ -83,8 +83,8 @@ class ReportService:
                     func.sum(OrderModel.final_total).label("total_amount"),
                 )
                 .filter(
-                    OrderModel.date >= start_date,
-                    OrderModel.date <= end_date,
+                    OrderModel.date >= start_date if start_date else True,
+                    OrderModel.date <= end_date if end_date else True,
                     OrderModel.status == "entregado",
                 )
                 .group_by(OrderModel.user_id)
