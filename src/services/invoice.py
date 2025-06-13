@@ -2,7 +2,6 @@ import uuid
 from datetime import datetime
 
 from src.models.invoice import InvoiceModel, InvoiceType
-from src.models.order import OrderStatus
 from src.repositories.invoice import InvoiceRepository
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.schemas.invoice_detail import CreateInvoiceDetailSchema
@@ -87,8 +86,6 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         saved_invoice = self.repository.save_with_details(
             invoice_model, invoice_details
         )
-
-        self.order_service.update_status(order_id, OrderStatus.facturado)
 
         return saved_invoice
 
