@@ -90,16 +90,12 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
 
             quantity_to_subtract = item_detail.quantity * detail.quantity
 
-            if (
-                inventory_item.current_stock < quantity_to_subtract
-                or inventory_item.current_stock - quantity_to_subtract
-                < inventory_item.minimum_stock
-            ):
+            if inventory_item.current_stock < quantity_to_subtract:
                 raise ValueError(f"Insufficient stock for item {inventory_item.name}.")
 
             new_stock = max(0, inventory_item.current_stock - quantity_to_subtract)
 
-            self.inventory_item_service.update(
+            self.inventory_item_repository.update(
                 inventory_item.id_key, {"current_stock": new_stock}
             )
 
@@ -112,15 +108,11 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
         quantity_to_subtract = inventory_detail.quantity
 
-        if (
-            inventory_item.current_stock < quantity_to_subtract
-            or inventory_item.current_stock - quantity_to_subtract
-            < inventory_item.minimum_stock
-        ):
+        if inventory_item.current_stock < quantity_to_subtract:
             raise ValueError(f"Insufficient stock for item {inventory_item.name}.")
 
         new_stock = max(0, inventory_item.current_stock - quantity_to_subtract)
-        self.inventory_item_service.update(
+        self.inventory_item_repository.update(
             inventory_item.id_key, {"current_stock": new_stock}
         )
 

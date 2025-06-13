@@ -23,7 +23,6 @@ class OrderStatus(enum.Enum):
     listo = "listo"
     en_delivery = "en_delivery"
     entregado = "entregado"
-    facturado = "facturado"
 
 
 class DeliveryMethod(enum.Enum):

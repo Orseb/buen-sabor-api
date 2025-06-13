@@ -43,7 +43,7 @@ class ReportService:
                 .filter(
                     OrderModel.date >= start_date,
                     OrderModel.date <= end_date,
-                    OrderModel.status == "facturado",
+                    OrderModel.status == "entregado",
                 )
                 .group_by(OrderDetailModel.manufactured_item_id)
                 .order_by(desc("total_quantity"))
@@ -85,7 +85,7 @@ class ReportService:
                 .filter(
                     OrderModel.date >= start_date,
                     OrderModel.date <= end_date,
-                    OrderModel.status == "facturado",
+                    OrderModel.status == "entregado",
                 )
                 .group_by(OrderModel.user_id)
                 .order_by(desc("order_count"))
