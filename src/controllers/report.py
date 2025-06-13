@@ -33,9 +33,9 @@ class ReportController:
             return self.service.get_top_customers(start_date, end_date, limit)
 
         @self.router.get("/revenue")
-        async def get_revenue(
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
+        async def get_revenue_by_period(
+            start_date: datetime = Query(None),
+            end_date: datetime = Query(None),
             current_user: dict = Depends(has_role([UserRole.administrador])),
         ):
             return self.service.get_revenue_by_period(start_date, end_date)

@@ -117,8 +117,8 @@ class ReportService:
             revenue_results = (
                 session.query(func.sum(InvoiceModel.total).label("total_revenue"))
                 .filter(
-                    InvoiceModel.date >= start_date,
-                    InvoiceModel.date <= end_date,
+                    InvoiceModel.date >= start_date if start_date else True,
+                    InvoiceModel.date <= end_date if end_date else True,
                     InvoiceModel.type == InvoiceType.factura,
                 )
                 .first()
@@ -127,8 +127,8 @@ class ReportService:
             invoice_count_results = (
                 session.query(func.count(InvoiceModel.id_key).label("invoice_count"))
                 .filter(
-                    InvoiceModel.date >= start_date,
-                    InvoiceModel.date <= end_date,
+                    InvoiceModel.date >= start_date if start_date else True,
+                    InvoiceModel.date <= end_date if end_date else True,
                     InvoiceModel.type == InvoiceType.factura,
                 )
                 .first()
@@ -140,8 +140,16 @@ class ReportService:
                     func.sum(InventoryPurchaseModel.total_cost).label("purchase_costs")
                 )
                 .filter(
-                    InventoryPurchaseModel.purchase_date >= start_date,
-                    InventoryPurchaseModel.purchase_date <= end_date,
+                    (
+                        InventoryPurchaseModel.purchase_date >= start_date
+                        if start_date
+                        else True
+                    ),
+                    (
+                        InventoryPurchaseModel.purchase_date <= end_date
+                        if end_date
+                        else True
+                    ),
                 )
                 .first()
             )
@@ -151,8 +159,16 @@ class ReportService:
                     func.count(InventoryPurchaseModel.id_key).label("purchase_count")
                 )
                 .filter(
-                    InventoryPurchaseModel.purchase_date >= start_date,
-                    InventoryPurchaseModel.purchase_date <= end_date,
+                    (
+                        InventoryPurchaseModel.purchase_date >= start_date
+                        if start_date
+                        else True
+                    ),
+                    (
+                        InventoryPurchaseModel.purchase_date <= end_date
+                        if end_date
+                        else True
+                    ),
                 )
                 .first()
             )
