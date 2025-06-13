@@ -1,12 +1,16 @@
+import io
 import uuid
 from datetime import datetime
 
 from src.models.invoice import InvoiceModel, InvoiceType
+from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.invoice import InvoiceRepository
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.schemas.invoice_detail import CreateInvoiceDetailSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.invoice_detail import InvoiceDetailService
+from src.utils.email import send_credit_note_email, send_invoice_email
+from src.utils.reportlab import generate_pdf_report
 
 
 class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSchema]):
@@ -22,6 +26,7 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         )
         self._order_service = None
         self._inventory_item_service = None
+        self.inventory_item_repository = InventoryItemRepository()
         self.invoice_detail_service = InvoiceDetailService()
 
     @property
@@ -42,8 +47,8 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
             self._inventory_item_service = InventoryItemService()
         return self._inventory_item_service
 
-    def generate_invoice(self, order_id: int) -> ResponseInvoiceSchema:
-        """Generate an invoice for an order with detailed line items."""
+    async def generate_invoice(self, order_id: int) -> ResponseInvoiceSchema:
+        """Generate an invoice for an order with detailed line items and send it via email."""
         order = self.order_service.get_one(order_id)
 
         invoice_number = (
@@ -87,10 +92,53 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
             invoice_model, invoice_details
         )
 
+        try:
+            await self._send_invoice_email(saved_invoice)
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send invoice email: {str(e)}")
+
         return saved_invoice
 
-    def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
-        """Generate a credit note for an invoice."""
+    async def _send_invoice_email(self, invoice: ResponseInvoiceSchema) -> None:
+        """Generate PDF and send invoice email to customer."""
+        invoice_items = [
+            {
+                "name": detail.item_name,
+                "quantity": detail.quantity,
+                "unit_price": detail.unit_price,
+                "type": detail.item_type,
+                "total": detail.subtotal,
+            }
+            for detail in invoice.details
+        ]
+
+        invoice_data = {
+            "number": invoice.number,
+            "date": invoice.date,
+            "user_name": invoice.order.user.full_name,
+            "items": invoice_items,
+            "subtotal": invoice.order.total,
+            "discount": invoice.order.discount,
+            "total": invoice.total,
+        }
+
+        buffer = io.BytesIO()
+        generate_pdf_report(invoice_data, buffer, "Factura")
+        pdf_data = buffer.getvalue()
+        buffer.close()
+
+        await send_invoice_email(
+            customer_email=invoice.order.user.email,
+            customer_name=invoice.order.user.full_name,
+            invoice_number=invoice.number,
+            pdf_data=pdf_data,
+        )
+
+    async def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
+        """Generate a credit note for an invoice and send it via email."""
         invoice = self.repository.find(invoice_id)
         self._restore_inventory_stock(invoice.order.id_key)
 
@@ -102,7 +150,50 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
             },
         )
 
+        try:
+            await self._send_credit_note_email(updated_invoice)
+        except Exception as e:
+            import logging
+
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to send credit note email: {str(e)}")
+
         return updated_invoice
+
+    async def _send_credit_note_email(self, invoice: ResponseInvoiceSchema) -> None:
+        """Generate PDF and send credit note email to customer."""
+        invoice_items = [
+            {
+                "name": detail.item_name,
+                "quantity": detail.quantity,
+                "unit_price": detail.unit_price,
+                "type": detail.item_type,
+                "total": detail.subtotal,
+            }
+            for detail in invoice.details
+        ]
+
+        invoice_data = {
+            "number": invoice.number,
+            "date": invoice.date,
+            "user_name": invoice.order.user.full_name,
+            "items": invoice_items,
+            "subtotal": invoice.order.total,
+            "discount": invoice.order.discount,
+            "total": invoice.total,
+        }
+
+        buffer = io.BytesIO()
+        generate_pdf_report(invoice_data, buffer, "Nota de Crédito")
+        pdf_data = buffer.getvalue()
+        buffer.close()
+
+        await send_credit_note_email(
+            customer_email=invoice.order.user.email,
+            customer_name=invoice.order.user.full_name,
+            credit_note_number=invoice.number,
+            pdf_data=pdf_data,
+        )
 
     def _restore_inventory_stock(self, order_id: int) -> None:
         """Restore inventory stock based on order details."""
@@ -125,6 +216,6 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
                 quantity_to_add = item_detail.quantity * detail.quantity
 
                 new_stock = inventory_item.current_stock + quantity_to_add
-                self.inventory_item_service.update(
+                self.inventory_item_repository.update(
                     inventory_item.id_key, {"current_stock": new_stock}
                 )

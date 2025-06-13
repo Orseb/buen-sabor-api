@@ -69,3 +69,4 @@ uvloop==0.21.0
 virtualenv==20.30.0
 watchfiles==1.0.0
 websockets==14.1
+aiosmtplib==3.0.2

@@ -186,9 +186,11 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         """Update order status."""
         return self.update(order_id, {"status": status})
 
-    def process_cash_payment(self, order: ResponseOrderSchema) -> ResponseOrderSchema:
+    async def process_cash_payment(
+        self, order: ResponseOrderSchema
+    ) -> ResponseOrderSchema:
         """Process cash payment for an order."""
-        self.invoice_service.generate_invoice(order.id_key)
+        await self.invoice_service.generate_invoice(order.id_key)
         return self.update(
             order.id_key,
             {
@@ -197,10 +199,10 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
             },
         )
 
-    def process_mp_payment(self, order: ResponseOrderSchema) -> str:
+    async def process_mp_payment(self, order: ResponseOrderSchema) -> str:
         """Process Mercado Pago payment for an order."""
         payment_data = create_mp_preference(order)
-        self.invoice_service.generate_invoice(order.id_key)
+        await self.invoice_service.generate_invoice(order.id_key)
 
         self.update(
             order.id_key,

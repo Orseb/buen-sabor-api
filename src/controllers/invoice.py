@@ -27,7 +27,7 @@ class InvoiceController(BaseControllerImplementation):
         async def generate_credit_note(
             id_key: int, current_user: dict = Depends(get_current_user)
         ):
-            return self.service.generate_credit_note(id_key)
+            return await self.service.generate_credit_note(id_key)
 
         @self.router.get("/report/{id_key}")
         async def get_invoice_report(

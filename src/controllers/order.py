@@ -179,7 +179,7 @@ class OrderController(
                     detail="This order does not accept cash as the payment method.",
                 )
 
-            return self.service.process_cash_payment(order)
+            return await self.service.process_cash_payment(order)
 
         @self.router.put("/{id_key}/mp-payment")
         async def process_mp_payment(
@@ -201,7 +201,7 @@ class OrderController(
                     detail="This order does not accept MP as the payment method.",
                 )
 
-            preference_id = self.service.process_mp_payment(order)
+            preference_id = await self.service.process_mp_payment(order)
 
             return {"payment_url": preference_id}
 

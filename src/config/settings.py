@@ -30,6 +30,14 @@ class Settings(BaseSettings):
     # Cloudinary
     cloudinary_api_key: Optional[str] = None
 
+    # Email
+    smtp_host: Optional[str] = "localhost"
+    smtp_port: Optional[int] = 1025
+    smtp_username: Optional[str] = None
+    smtp_password: Optional[str] = None
+    smtp_use_tls: Optional[bool] = False
+    from_email: Optional[str] = "noreply@elbuensabor.com"
+
     class Config:
         env_file = ".env"
         case_sensitive = False
