@@ -1,6 +1,5 @@
-from fastapi import Depends, Path
+from fastapi import APIRouter, Depends, Path
 
-from src.controllers.base_implementation import BaseControllerImplementation
 from src.schemas.address import (
     CreateAddressSchema,
     ResponseAddressSchema,
@@ -10,27 +9,28 @@ from src.services.address import AddressService
 from src.utils.rbac import get_current_user
 
 
-class AddressController(BaseControllerImplementation):
+class AddressController:
+    """Controlador para manejar las direcciones de los usuarios"""
+
     def __init__(self):
-        super().__init__(
-            create_schema=CreateAddressSchema,
-            response_schema=ResponseAddressSchema,
-            service=AddressService(),
-            tags=["Address"],
-        )
+        """Inicializa el controlador de direcciones"""
+        self.router = APIRouter(tags=["Address"])
+        self.service = AddressService()
 
         @self.router.get("/user/addresses", response_model=PaginatedResponseSchema)
         async def get_user_addresses(
             offset: int = 0,
             limit: int = 10,
             current_user: dict = Depends(get_current_user),
-        ):
+        ) -> PaginatedResponseSchema:
+            """Obtiene todas las direcciones del usuario actual"""
             return self.service.get_all_by("user_id", current_user["id"], offset, limit)
 
         @self.router.post("/user/addresses", response_model=ResponseAddressSchema)
         async def create_user_address(
             address: CreateAddressSchema, current_user: dict = Depends(get_current_user)
-        ):
+        ) -> ResponseAddressSchema:
+            """Crea una nueva dirección para el usuario actual"""
             return self.service.create_user_address(current_user["id"], address)
 
         @self.router.put(
@@ -40,7 +40,8 @@ class AddressController(BaseControllerImplementation):
             address_id: int = Path(...),
             address: CreateAddressSchema = None,
             current_user: dict = Depends(get_current_user),
-        ):
+        ) -> ResponseAddressSchema:
+            """Actualiza una dirección del usuario actual"""
             return self.service.update_user_address(
                 current_user["id"], address_id, address
             )
@@ -48,5 +49,6 @@ class AddressController(BaseControllerImplementation):
         @self.router.delete("/user/addresses/{address_id}")
         async def delete_user_address(
             address_id: int = Path(...), current_user: dict = Depends(get_current_user)
-        ):
+        ) -> ResponseAddressSchema:
+            """Elimina una dirección del usuario actual"""
             return self.service.delete_user_address(current_user["id"], address_id)

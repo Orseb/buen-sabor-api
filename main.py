@@ -6,7 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from src.config.database import Database
 from src.config.settings import settings
 from src.controllers.address import AddressController
-from src.controllers.auth import router as auth_router
+from src.controllers.auth import AuthController
 from src.controllers.country import CountryController
 from src.controllers.health_check import router as health_check_controller
 from src.controllers.inventory_item import InventoryItemController
@@ -60,7 +60,7 @@ app.add_exception_handler(IntegrityError, integrity_error_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
 app.include_router(health_check_controller, prefix="/health_check")
-app.include_router(auth_router, prefix="/auth")
+app.include_router(AuthController().router, prefix="/auth")
 app.include_router(CountryController().router, prefix="/country")
 app.include_router(ProvinceController().router, prefix="/province")
 app.include_router(LocalityController().router, prefix="/locality")

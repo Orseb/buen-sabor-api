@@ -4,6 +4,8 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
+    """Configuración de la aplicación utilizando Pydantic Settings"""
+
     # Database
     db_username: Optional[str] = None
     db_password: Optional[str] = None

@@ -8,41 +8,41 @@ S = TypeVar("S", bound=BaseSchema)
 
 
 class BaseController(Generic[S], ABC):
-    """Abstract base controller defining the interface for HTTP endpoints."""
+    """Controlador base para manejar las operaciones CRUD de un recurso"""
 
     @property
     @abstractmethod
     def service(self) -> BaseService:
-        """Get the service for business logic."""
+        """Devuelve el servicio asociado al controlador"""
         pass
 
     @property
     @abstractmethod
     def schema(self) -> Type[S]:
-        """Get the Pydantic schema class for responses."""
+        """Devuelve el esquema asociado al controlador"""
         pass
 
     @abstractmethod
     def get_all(self, offset: int = 0, limit: int = 10) -> List[S]:
-        """Get all records."""
+        """Obtiene una lista de todos los registros del recurso"""
         pass
 
     @abstractmethod
     def get_one(self, id_key: int) -> S:
-        """Get a record by primary key."""
+        """Obtiene un registro específico del recurso por su ID"""
         pass
 
     @abstractmethod
     def save(self, schema: BaseSchema) -> S:
-        """Save a new record."""
+        """Guarda un nuevo registro del recurso"""
         pass
 
     @abstractmethod
     def update(self, id_key: int, schema: BaseSchema) -> S:
-        """Update an existing record."""
+        """Actualiza un registro existente del recurso"""
         pass
 
     @abstractmethod
     def delete(self, id_key: int) -> S:
-        """Delete a record by primary key."""
+        """Elimina un registro del recurso por su ID"""
         pass
