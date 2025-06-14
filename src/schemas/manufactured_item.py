@@ -29,3 +29,7 @@ class ResponseManufacturedItemSchema(BaseManufacturedItemSchema):
     category: ResponseManufacturedItemCategorySchema
     details: List[ResponseManufacturedItemDetailSchema] = []
     id_key: int
+
+
+class ResponseManufacturedItemWithAvailabilitySchema(ResponseManufacturedItemSchema):
+    is_available: bool

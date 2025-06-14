@@ -18,4 +18,5 @@ class ManufacturedItemController(BaseControllerImplementation):
 
         @self.router.get("/products/all", response_model=PaginatedResponseSchema)
         def get_product_inventory_items(offset: int = 0, limit: int = 10):
-            return self.service.get_all(offset, limit)
+            """Get manufactured items with availability information based on ingredient stock."""
+            return self.service.get_all_with_availability(offset, limit)

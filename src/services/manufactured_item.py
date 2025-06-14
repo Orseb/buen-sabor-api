@@ -4,7 +4,9 @@ from src.repositories.manufactured_item_detail import ManufacturedItemDetailRepo
 from src.schemas.manufactured_item import (
     CreateManufacturedItemSchema,
     ResponseManufacturedItemSchema,
+    ResponseManufacturedItemWithAvailabilitySchema,
 )
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.inventory_item import InventoryItemService
 from src.utils.cloudinary import (
@@ -61,3 +63,51 @@ class ManufacturedItemService(BaseServiceImplementation):
                 print("Failed to delete image from Cloudinary:", e)
 
         return self.repository.remove(id_key)
+
+    def get_all_with_availability(
+        self, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Get all manufactured items with availability information."""
+        # Get regular paginated results
+        paginated_result = self.get_all(offset, limit)
+
+        # Convert items to include availability
+        items_with_availability = []
+        for item in paginated_result.items:
+            is_available = self._check_item_availability(item)
+            item_dict = item.model_dump()
+            item_dict["is_available"] = is_available
+            items_with_availability.append(
+                ResponseManufacturedItemWithAvailabilitySchema(**item_dict)
+            )
+
+        return PaginatedResponseSchema(
+            total=paginated_result.total,
+            offset=paginated_result.offset,
+            limit=paginated_result.limit,
+            items=items_with_availability,
+        )
+
+    def _check_item_availability(
+        self, manufactured_item: ResponseManufacturedItemSchema
+    ) -> bool:
+        """Check if a manufactured item can be produced based on ingredient stock."""
+        if not manufactured_item.details:
+            # If no ingredients are required, it's available
+            return True
+
+        for detail in manufactured_item.details:
+            inventory_item = self.inventory_item_service.get_one(
+                detail.inventory_item.id_key
+            )
+
+            # Check if there's enough stock for this ingredient
+            if inventory_item.current_stock < detail.quantity:
+                return False
+
+        return True
+
+    def check_single_item_availability(self, manufactured_item_id: int) -> bool:
+        """Check availability for a single manufactured item."""
+        manufactured_item = self.get_one(manufactured_item_id)
+        return self._check_item_availability(manufactured_item)
