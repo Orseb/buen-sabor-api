@@ -17,7 +17,6 @@ class AuthController:
     """Controlador para manejar la autenticación de usuarios"""
 
     def __init__(self):
-        """Inicializa el controlador de autenticación"""
         self.router = APIRouter(tags=["Auth"])
         self.user_service = UserService()
 

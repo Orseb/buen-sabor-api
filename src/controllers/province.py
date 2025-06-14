@@ -1,16 +1,11 @@
-from src.controllers.base_implementation import BaseControllerImplementation
-from src.schemas.province import (
-    CreateProvinceSchema,
-    ResponseProvinceSchema,
-)
+from fastapi import APIRouter
+
 from src.services.province import ProvinceService
 
 
-class ProvinceController(BaseControllerImplementation):
+class ProvinceController:
+    """Controlador para manejar las provincias."""
+
     def __init__(self):
-        super().__init__(
-            create_schema=CreateProvinceSchema,
-            response_schema=ResponseProvinceSchema,
-            service=ProvinceService(),
-            tags=["Province"],
-        )
+        self.router = APIRouter(tags=["Province"])
+        self.service = ProvinceService()

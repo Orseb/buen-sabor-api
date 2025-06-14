@@ -1,16 +1,17 @@
-from src.controllers.base_implementation import BaseControllerImplementation
-from src.schemas.country import (
-    CreateCountrySchema,
-    ResponseCountrySchema,
-)
+from fastapi import APIRouter
+
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.country import CountryService
 
 
-class CountryController(BaseControllerImplementation):
+class CountryController:
+    """Controlador para manejar las operaciones relacionadas con los países."""
+
     def __init__(self):
-        super().__init__(
-            create_schema=CreateCountrySchema,
-            response_schema=ResponseCountrySchema,
-            service=CountryService(),
-            tags=["Country"],
-        )
+        self.router = APIRouter(tags=["Country"])
+        self.service = CountryService()
+
+        @self.router.get("/", response_model=PaginatedResponseSchema)
+        async def get_all_countries() -> PaginatedResponseSchema:
+            """Obtiene todos los países disponibles."""
+            return self.service.get_all()

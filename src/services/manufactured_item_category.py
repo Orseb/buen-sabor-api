@@ -1,5 +1,3 @@
-from typing import List
-
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
 from src.repositories.manufactured_item_category import (
     ManufacturedItemCategoryRepository,
@@ -68,41 +66,3 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
         )
-
-    def get_subcategories(
-        self, parent_id: int
-    ) -> List[ResponseManufacturedItemCategorySchema]:
-        """Get all subcategories for a given parent category."""
-        with self.repository.session_scope() as session:
-            subcategories = (
-                session.query(self.model)
-                .filter(self.model.parent_id == parent_id)
-                .filter(self.model.active.is_(True))
-                .all()
-            )
-            return [
-                self.schema.model_validate(subcategory) for subcategory in subcategories
-            ]
-
-    def get_category_with_subcategories(
-        self, category_id: int
-    ) -> ResponseManufacturedItemCategorySchema:
-        """Get a category with its subcategories."""
-        category = self.get_one(category_id)
-
-        if category.parent_id is not None:
-            category.subcategories = []
-            return category
-
-        with self.repository.session_scope() as session:
-            subcategories = (
-                session.query(self.model)
-                .filter(self.model.parent_id == category_id)
-                .filter(self.model.active.is_(True))
-                .all()
-            )
-            category.subcategories = [
-                self.schema.model_validate(subcategory) for subcategory in subcategories
-            ]
-
-        return category

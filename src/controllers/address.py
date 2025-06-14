@@ -13,7 +13,6 @@ class AddressController:
     """Controlador para manejar las direcciones de los usuarios"""
 
     def __init__(self):
-        """Inicializa el controlador de direcciones"""
         self.router = APIRouter(tags=["Address"])
         self.service = AddressService()
 

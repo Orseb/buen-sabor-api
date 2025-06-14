@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List, Optional
+from typing import Optional
 
 from src.models.inventory_purchase import InventoryPurchaseModel
 from src.repositories.inventory_item import InventoryItemRepository
@@ -48,35 +48,3 @@ class InventoryPurchaseService(BaseServiceImplementation):
         )
 
         return self.save(purchase)
-
-    def get_purchases_by_date_range(
-        self, start_date: datetime, end_date: datetime
-    ) -> List[ResponseInventoryPurchaseSchema]:
-        """Get all purchases within a date range."""
-        with self.repository.session_scope() as session:
-            purchases = (
-                session.query(self.model)
-                .filter(
-                    self.model.purchase_date >= start_date,
-                    self.model.purchase_date <= end_date,
-                )
-                .all()
-            )
-
-            return [self.schema.model_validate(purchase) for purchase in purchases]
-
-    def get_expenses_by_date_range(
-        self, start_date: datetime, end_date: datetime
-    ) -> Dict:
-        """Calculate total expenses from purchases within a date range."""
-        purchases = self.get_purchases_by_date_range(start_date, end_date)
-
-        total_expenses = sum(purchase.total_cost for purchase in purchases)
-        purchase_count = len(purchases)
-
-        return {
-            "total_expenses": total_expenses,
-            "purchase_count": purchase_count,
-            "start_date": start_date,
-            "end_date": end_date,
-        }

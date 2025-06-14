@@ -1,38 +1,47 @@
 import io
 
-from fastapi import Depends
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 
-from src.controllers.base_implementation import BaseControllerImplementation
 from src.models.invoice import InvoiceType
-from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
+from src.models.user import UserRole
+from src.schemas.invoice import ResponseInvoiceSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.invoice import InvoiceService
-from src.utils.rbac import get_current_user
+from src.utils.rbac import get_current_user, has_role
 from src.utils.reportlab import generate_pdf_report
 
 
-class InvoiceController(BaseControllerImplementation):
+class InvoiceController:
+    """Controlador para manejar las facturas y notas de crédito."""
+
     def __init__(self):
-        super().__init__(
-            create_schema=CreateInvoiceSchema,
-            response_schema=ResponseInvoiceSchema,
-            service=InvoiceService(),
-            tags=["Invoice"],
-        )
+        self.router = APIRouter(tags=["Invoice"])
+        self.service = InvoiceService()
+
+        @self.router.get("/", response_model=PaginatedResponseSchema)
+        async def get_all_invoices(
+            _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero]))
+        ) -> PaginatedResponseSchema:
+            """Obtiene todas las facturas y notas de crédito."""
+            return self.service.get_all()
 
         @self.router.post(
             "/credit-note/{id_key}",
             response_model=ResponseInvoiceSchema,
         )
         async def generate_credit_note(
-            id_key: int, current_user: dict = Depends(get_current_user)
-        ):
+            id_key: int,
+            _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero])),
+        ) -> ResponseInvoiceSchema:
+            """Genera una nota de crédito a partir de una factura existente."""
             return await self.service.generate_credit_note(id_key)
 
         @self.router.get("/report/{id_key}")
         async def get_invoice_report(
-            id_key: int, current_user: dict = Depends(get_current_user)
-        ):
+            id_key: int, _: dict = Depends(get_current_user)
+        ) -> StreamingResponse:
+            """Genera un reporte PDF de la factura o nota de crédito."""
             invoice = self.service.get_one(id_key)
 
             invoice_items = [
@@ -56,15 +65,18 @@ class InvoiceController(BaseControllerImplementation):
                 "total": invoice.total,
             }
 
+            report_type = (
+                "Factura"
+                if invoice.type == InvoiceType.factura.value
+                else "Nota de Crédito"
+            )
+            filename = (
+                f"{'invoice' if invoice.type == InvoiceType.factura.value else 'credit_note'}"
+                f"_{id_key}.pdf"
+            )
+
             buffer = io.BytesIO()
-
-            if invoice.type == InvoiceType.factura.value:
-                generate_pdf_report(invoice_data, buffer, "Factura")
-                filename = f"invoice_{id_key}.pdf"
-            else:
-                generate_pdf_report(invoice_data, buffer, "Nota de Crédito")
-                filename = f"credit_note_{id_key}.pdf"
-
+            generate_pdf_report(invoice_data, buffer, report_type)
             buffer.seek(0)
 
             return StreamingResponse(

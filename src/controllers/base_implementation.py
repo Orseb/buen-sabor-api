@@ -24,7 +24,6 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
         tags: Optional[List[str]] = None,
         required_roles: Optional[List[UserRole]] = None,
     ):
-        """Inicializa el controlador con un servicio, esquemas de Pydantic y roles requeridos"""
         self._service = service
         self.create_schema = create_schema
         self.response_schema = response_schema

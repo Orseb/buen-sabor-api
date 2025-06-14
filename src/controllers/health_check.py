@@ -1,14 +1,21 @@
+from typing import Dict
+
 from fastapi import APIRouter
 
 from src.config.database import Database
 
-router = APIRouter(tags=["Health Check"])
-db = Database()
 
+class HealthCheckController:
+    """Controller para verificar la salud de la API y la conexión a la base de datos."""
 
-@router.get("/")
-def health_check():
-    if db.check_connection():
-        return {"status": "OK"}
+    def __init__(self):
+        self.router = APIRouter(tags=["Health Check"])
+        self.db = Database()
 
-    return {"status": "ERROR"}
+        @self.router.get("/")
+        def health_check() -> Dict[str, str]:
+            """Endpoint para verificar la salud de la API y la conexión a la base de datos."""
+            if self.db.check_connection():
+                return {"status": "ok", "message": "Database connection is healthy"}
+
+            return {"status": "error", "message": "Database connection failed"}

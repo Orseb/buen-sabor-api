@@ -8,6 +8,8 @@ from src.services.manufactured_item import ManufacturedItemService
 
 
 class ManufacturedItemController(BaseControllerImplementation):
+    """Controlador para manejar los items manufacturados."""
+
     def __init__(self):
         super().__init__(
             create_schema=CreateManufacturedItemSchema,
@@ -17,6 +19,8 @@ class ManufacturedItemController(BaseControllerImplementation):
         )
 
         @self.router.get("/products/all", response_model=PaginatedResponseSchema)
-        def get_product_inventory_items(offset: int = 0, limit: int = 10):
-            """Get manufactured items with availability information based on ingredient stock."""
+        def get_product_inventory_items(
+            offset: int = 0, limit: int = 10
+        ) -> PaginatedResponseSchema:
+            """Obtiene todos los items manufacturados que no son ingredientes."""
             return self.service.get_all_with_availability(offset, limit)

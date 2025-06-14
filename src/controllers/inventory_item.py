@@ -14,6 +14,8 @@ from src.utils.rbac import has_role
 
 
 class InventoryItemController(BaseControllerImplementation):
+    """Controlar para manejar los items del inventario."""
+
     def __init__(self):
         super().__init__(
             create_schema=CreateInventoryItemSchema,
@@ -23,15 +25,19 @@ class InventoryItemController(BaseControllerImplementation):
         )
 
         @self.router.get("/products/all", response_model=PaginatedResponseSchema)
-        def get_product_inventory_items(offset: int = 0, limit: int = 10):
+        def get_product_inventory_items(
+            offset: int = 0, limit: int = 10
+        ) -> PaginatedResponseSchema:
+            """Obtiene todos los items del inventario que no son ingredientes."""
             return self.service.get_all_by("is_ingredient", False, offset, limit)
 
         @self.router.get("/ingredients/all", response_model=PaginatedResponseSchema)
         def get_ingredient_inventory_items(
             offset: int = 0,
             limit: int = 10,
-            current_user: Dict[str, Any] = Depends(
+            _: Dict[str, Any] = Depends(
                 has_role([UserRole.administrador, UserRole.cocinero])
             ),
-        ):
+        ) -> PaginatedResponseSchema:
+            """Obtiene todos los items del inventario que son ingredientes."""
             return self.service.get_all_by("is_ingredient", True, offset, limit)
