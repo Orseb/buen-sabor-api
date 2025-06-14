@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 import aiosmtplib
+from pydantic import EmailStr
 
 from src.config.settings import settings
 
@@ -16,9 +17,8 @@ async def send_email_with_attachment(
     body: str,
     attachment_data: bytes,
     attachment_filename: str,
-    attachment_content_type: str = "application/pdf",
 ) -> bool:
-    """Send an email with an attachment using SMTP"""
+    """Envia un correo electrónico con un archivo adjunto."""
     try:
         message = MIMEMultipart()
         message["From"] = settings.from_email
@@ -42,21 +42,21 @@ async def send_email_with_attachment(
             use_tls=settings.smtp_use_tls,
         )
 
-        logger.info(f"Email sent successfully to {to_email}")
+        logger.info(f"Email enviado a {to_email} con éxito.")
         return True
 
     except Exception as e:
-        logger.error(f"Failed to send email to {to_email}: {str(e)}")
+        logger.error(f"Error al enviar el email a {to_email}: {e}")
         return False
 
 
 async def send_invoice_email(
-    customer_email: str,
+    customer_email: EmailStr,
     customer_name: str,
     invoice_number: str,
     pdf_data: bytes,
 ) -> bool:
-    """Send an invoice email to a customer"""
+    """Envia un correo electrónico con una factura adjunta."""
     subject = f"Factura #{invoice_number} - El Buen Sabor"
 
     body = f"""Estimado/a {customer_name},
@@ -79,12 +79,12 @@ El equipo de El Buen Sabor"""
 
 
 async def send_credit_note_email(
-    customer_email: str,
+    customer_email: EmailStr,
     customer_name: str,
     credit_note_number: str,
     pdf_data: bytes,
 ) -> bool:
-    """Send a credit note email to a customer."""
+    """Envia un correo electrónico con una nota de crédito adjunta."""
     subject = f"Nota de Crédito #{credit_note_number} - El Buen Sabor"
 
     body = f"""Estimado/a {customer_name},

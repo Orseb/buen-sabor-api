@@ -4,7 +4,8 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 
-def generate_pdf_report(invoice_data: dict, filename: str, invoice_type: str):
+def generate_pdf_report(invoice_data: dict, filename: str, invoice_type: str) -> None:
+    """Genera un reporte PDF de una factura o nota de crédito."""
     doc = SimpleDocTemplate(filename, pagesize=A4)
     elements = []
     styles = getSampleStyleSheet()

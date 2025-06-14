@@ -1,6 +1,6 @@
 from datetime import datetime
 from io import BytesIO
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import openpyxl
 from openpyxl.styles import Font
@@ -10,10 +10,8 @@ def generate_excel_report(
     buffer: BytesIO,
     purchases: List[Tuple[datetime, int, float, str]],
     invoices: List[Tuple[datetime, float, str]],
-    start_date: Optional[datetime] = None,
-    end_date: Optional[datetime] = None,
-) -> BytesIO:
-    """Generate an Excel report for movements, costs, and revenues."""
+) -> None:
+    """Genera un reporte en formato Excel con las compras e ingresos."""
     workbook = openpyxl.Workbook()
     sheet = workbook.active
     sheet.title = "Report"

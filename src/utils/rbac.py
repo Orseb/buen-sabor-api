@@ -1,6 +1,6 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Union
 
-from fastapi import Depends, HTTPException, Request
+from fastapi import Depends, HTTPException
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError, jwt
 from starlette.status import HTTP_401_UNAUTHORIZED, HTTP_403_FORBIDDEN
@@ -14,7 +14,7 @@ security = HTTPBearer()
 def validate_token(
     credentials: HTTPAuthorizationCredentials = Depends(security),
 ) -> Dict[str, Any]:
-    """Validate a JWT token and return the decoded payload."""
+    """Valida el token JWT y devuelve el payload."""
     token = credentials.credentials
     try:
         payload = jwt.decode(
@@ -32,7 +32,7 @@ def validate_token(
 def get_current_user(
     payload: Dict[str, Any] = Depends(validate_token),
 ) -> Dict[str, Any]:
-    """Extract the current user from the JWT token payload."""
+    """Obtiene el usuario actual a partir del token JWT."""
     try:
         user_id = int(payload.get("sub"))
         user_email = payload.get("email")
@@ -55,13 +55,14 @@ def get_current_user(
 
 
 def has_role(allowed_roles: Union[List[UserRole], UserRole]):
-    """Dependency that checks if the current user has one of the allowed roles."""
+    """Decorador para verificar si el usuario tiene uno de los roles permitidos."""
     if isinstance(allowed_roles, UserRole):
         allowed_roles = [allowed_roles]
 
     async def role_checker(
         current_user: Dict[str, Any] = Depends(get_current_user),
     ) -> Dict[str, Any]:
+        """Verifica si el usuario actual tiene uno de los roles permitidos."""
         user_role = current_user.get("role")
 
         if user_role not in [role.value for role in allowed_roles]:
@@ -74,23 +75,3 @@ def has_role(allowed_roles: Union[List[UserRole], UserRole]):
         return current_user
 
     return role_checker
-
-
-def optional_auth(request: Request) -> Optional[Dict[str, Any]]:
-    """Optional authentication"""
-    auth_header = request.headers.get("Authorization")
-    if not auth_header or not auth_header.startswith("Bearer "):
-        return None
-
-    token = auth_header.replace("Bearer ", "")
-    try:
-        payload = jwt.decode(
-            token, settings.secret_key or "", algorithms=[settings.algorithm or "HS256"]
-        )
-        return {
-            "id": int(payload.get("sub", 0)),
-            "email": payload.get("email"),
-            "role": payload.get("role"),
-        }
-    except (JWTError, ValueError):
-        return None

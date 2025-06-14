@@ -12,7 +12,7 @@ from src.services.user import UserService
 
 
 def create_access_token(user_email: EmailStr, user_id: int, user_role: UserRole) -> str:
-    """Generate a JWT access token for a user."""
+    """Genera un token de acceso JWT para un usuario."""
     expires_in = datetime.now(UTC) + timedelta(
         minutes=int(settings.access_token_expire_minutes or 30)
     )
@@ -32,34 +32,29 @@ def create_access_token(user_email: EmailStr, user_id: int, user_role: UserRole)
 def authenticate_user(
     user_email: EmailStr, user_password: str, user_service: UserService
 ) -> Optional[ResponseUserSchema]:
-    """Authenticate a user with email and password."""
+    """Autentica a un usuario verificando su email y contraseña."""
     existing_user = user_service.get_one_by("email", user_email)
 
-    if not existing_user:
+    if not existing_user or not existing_user.password:
         return None
 
-    if not existing_user.password:
-        return None
-
-    matching_passwords = bcrypt.checkpw(
+    if not bcrypt.checkpw(
         user_password.encode("utf-8"), existing_user.password.encode("utf-8")
-    )
-
-    if not matching_passwords:
+    ):
         return None
 
     return existing_user
 
 
 def hash_password(password: str) -> str:
-    """Hash a password using bcrypt."""
+    """Hashea una contraseña usando bcrypt."""
     salt = bcrypt.gensalt()
     hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
     return hashed_password.decode("utf-8")
 
 
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    """Verify a password against a hash."""
+    """Verifica si una contraseña en texto plano coincide con un hash."""
     return bcrypt.checkpw(
         plain_password.encode("utf-8"), hashed_password.encode("utf-8")
     )
