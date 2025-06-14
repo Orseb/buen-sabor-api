@@ -18,7 +18,7 @@ async def send_email_with_attachment(
     attachment_filename: str,
     attachment_content_type: str = "application/pdf",
 ) -> bool:
-    """Send an email with an attachment using SMTP."""
+    """Send an email with an attachment using SMTP"""
     try:
         message = MIMEMultipart()
         message["From"] = settings.from_email
@@ -56,7 +56,7 @@ async def send_invoice_email(
     invoice_number: str,
     pdf_data: bytes,
 ) -> bool:
-    """Send an invoice email to a customer."""
+    """Send an invoice email to a customer"""
     subject = f"Factura #{invoice_number} - El Buen Sabor"
 
     body = f"""Estimado/a {customer_name},

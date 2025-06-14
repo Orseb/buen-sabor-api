@@ -17,10 +17,9 @@ from src.utils.rbac import get_current_user, has_role
 class OrderController(
     BaseControllerImplementation[ResponseOrderSchema, CreateOrderSchema]
 ):
-    """Controller for order endpoints."""
+    """Controlador para manejar las operaciones relacionadas con los pedidos."""
 
     def __init__(self):
-        """Initialize the order controller with service and schemas."""
         super().__init__(
             create_schema=CreateOrderSchema,
             response_schema=ResponseOrderSchema,
@@ -42,11 +41,11 @@ class OrderController(
             order: CreateOrderSchema,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> ResponseOrderSchema:
-            """Create a new order."""
+            """Genera un nuevo pedido."""
             if not order.details and not order.inventory_details:
                 raise HTTPException(
                     status_code=400,
-                    detail="Order must have at least one detail or inventory detail.",
+                    detail="El pedido debe tener al menos un detalle o un item de inventario.",
                 )
 
             for detail in order.inventory_details:
@@ -56,7 +55,7 @@ class OrderController(
                 if inventory_item.is_ingredient:
                     raise HTTPException(
                         status_code=400,
-                        detail="Inventory detail cannot be an ingredient.",
+                        detail="Los items de inventario deben ser productos, no ingredientes.",
                     )
 
             order.user_id = current_user["id"]
@@ -67,13 +66,13 @@ class OrderController(
             if not order.address_id:
                 raise HTTPException(
                     status_code=400,
-                    detail="An address must be supplied in delivery method.",
+                    detail="Para pedidos con entrega, se debe proporcionar una direccion.",
                 )
 
             if order.payment_method != PaymentMethod.mercado_pago.value:
                 raise HTTPException(
                     status_code=400,
-                    detail="Mercado Pago must be selected as the payment method in delivery.",
+                    detail="Mercado Pago debe ser el metodo de pago para pedidos con entrega.",
                 )
 
             user_addresses = self.address_service.get_all_by(
@@ -84,7 +83,7 @@ class OrderController(
             ):
                 raise HTTPException(
                     status_code=403,
-                    detail="The selected address does not belong to the user",
+                    detail="La direccion seleccionada no pertenece al usuario.",
                 )
 
             return self.service.save(order)
@@ -94,7 +93,7 @@ class OrderController(
             status: OrderStatus,
             offset: int = 0,
             limit: int = 10,
-            current_user: Dict[str, Any] = Depends(
+            _: Dict[str, Any] = Depends(
                 has_role(
                     [
                         UserRole.administrador,
@@ -105,7 +104,7 @@ class OrderController(
                 )
             ),
         ) -> PaginatedResponseSchema:
-            """Get orders by status."""
+            """Se obtienen los pedidos por estado."""
             return self.service.get_by_status(status, offset, limit)
 
         @self.router.get("/user/token", response_model=PaginatedResponseSchema)
@@ -115,7 +114,7 @@ class OrderController(
             limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> PaginatedResponseSchema:
-            """Get orders by user, optionally filtered by status."""
+            """Se obtienen los pedidos del usuario autenticado."""
             return self.service.get_by_user(current_user["id"], status, offset, limit)
 
         @self.router.put("/{id_key}/status", response_model=ResponseOrderSchema)
@@ -133,7 +132,7 @@ class OrderController(
                 )
             ),
         ) -> ResponseOrderSchema:
-            """Update order status."""
+            """Actualiza el estado de un pedido."""
             if current_user["role"] == UserRole.cocinero.value:
                 allowed_statuses = [
                     OrderStatus.en_cocina.value,
@@ -142,7 +141,7 @@ class OrderController(
                 if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"Cook can only update status to: {allowed_statuses}",
+                        detail=f"El cocinero solo puede actualizar el estado a: {allowed_statuses}",
                     )
             elif current_user["role"] == UserRole.delivery.value:
                 allowed_statuses = [
@@ -152,7 +151,7 @@ class OrderController(
                 if status.value not in allowed_statuses:
                     raise HTTPException(
                         status_code=403,
-                        detail=f"Delivery can only update status to: {allowed_statuses}",
+                        detail=f"El delivery solo puede actualizar el estado a: {allowed_statuses}",
                     )
 
             return self.service.update_status(id_key, status)
@@ -160,23 +159,23 @@ class OrderController(
         @self.router.put("/{id_key}/cash-payment", response_model=ResponseOrderSchema)
         async def process_cash_payment(
             id_key: int,
-            current_user: Dict[str, Any] = Depends(
+            _: Dict[str, Any] = Depends(
                 has_role([UserRole.cajero, UserRole.administrador])
             ),
         ) -> ResponseOrderSchema:
-            """Process cash payment for an order."""
+            """Procesa el pago en efectivo de un pedido."""
             order = self.service.get_one(id_key)
 
             if order.is_paid:
                 raise HTTPException(
                     status_code=403,
-                    detail="This order has already been paid.",
+                    detail="Este pedido ya ha sido pagado.",
                 )
 
             if order.payment_method != PaymentMethod.cash.value:
                 raise HTTPException(
                     status_code=403,
-                    detail="This order does not accept cash as the payment method.",
+                    detail="Este pedido no acepta efectivo como metodo de pago.",
                 )
 
             return await self.service.process_cash_payment(order)
@@ -184,21 +183,21 @@ class OrderController(
         @self.router.put("/{id_key}/mp-payment")
         async def process_mp_payment(
             id_key: int,
-            current_user: Dict[str, Any] = Depends(get_current_user),
+            _: Dict[str, Any] = Depends(get_current_user),
         ) -> Dict[str, str]:
-            """Process Mercado Pago payment for an order."""
+            """Procesa el pago con Mercado Pago de un pedido."""
             order = self.service.get_one(id_key)
 
             if order.is_paid:
                 raise HTTPException(
                     status_code=403,
-                    detail="This order has already been paid.",
+                    detail="Este pedido ya ha sido pagado.",
                 )
 
             if order.payment_method != PaymentMethod.mercado_pago.value:
                 raise HTTPException(
                     status_code=403,
-                    detail="This order does not accept MP as the payment method.",
+                    detail="Este pedido no acepta Mercado Pago como metodo de pago.",
                 )
 
             preference_id = await self.service.process_mp_payment(order)
@@ -209,14 +208,14 @@ class OrderController(
         async def add_delay(
             id_key: int,
             delay_minutes: int,
-            current_user: Dict[str, Any] = Depends(
+            _: Dict[str, Any] = Depends(
                 has_role([UserRole.administrador, UserRole.cocinero])
             ),
         ) -> ResponseOrderSchema:
-            """Add a delay to an order."""
+            """Agrega retraso en minutos al pedido."""
             if delay_minutes <= 0:
                 raise HTTPException(
                     status_code=400,
-                    detail="Delay must be a positive integer.",
+                    detail="El retraso debe ser mayor a 0 minutos.",
                 )
             return self.service.add_delay(id_key, delay_minutes)

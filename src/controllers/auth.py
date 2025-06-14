@@ -61,7 +61,7 @@ class AuthController:
             except OAuthError:
                 raise HTTPException(
                     status_code=HTTP_401_UNAUTHORIZED,
-                    detail="Could not validate credentials.",
+                    detail="Error al autenticar con Google. Inténtalo de nuevo.",
                 )
 
             google_user = GoogleUser(**user_response["userinfo"])

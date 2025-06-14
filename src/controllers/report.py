@@ -1,5 +1,6 @@
 from datetime import datetime
 from io import BytesIO
+from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, Query
 from starlette.responses import StreamingResponse
@@ -10,6 +11,8 @@ from src.utils.rbac import has_role
 
 
 class ReportController:
+    """Controlador para manejar las operaciones relacionadas con los reportes."""
+
     def __init__(self):
         self.service = ReportService()
         self.router = APIRouter(tags=["Reports"])
@@ -19,8 +22,9 @@ class ReportController:
             start_date: datetime = Query(None),
             end_date: datetime = Query(None),
             limit: int = Query(10),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> List[Dict[str, Any]]:
+            """Obtiene los productos más vendidos en un período específico."""
             return self.service.get_top_products(start_date, end_date, limit)
 
         @self.router.get("/top-customers")
@@ -28,24 +32,27 @@ class ReportController:
             start_date: datetime = Query(None),
             end_date: datetime = Query(None),
             limit: int = Query(10),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> List[Dict[str, Any]]:
+            """Obtiene los clientes que más han gastado en un período específico."""
             return self.service.get_top_customers(start_date, end_date, limit)
 
         @self.router.get("/revenue")
         async def get_revenue_by_period(
             start_date: datetime = Query(None),
             end_date: datetime = Query(None),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> Dict[str, Any]:
+            """Obtiene los ingresos totales en un período específico."""
             return self.service.get_revenue_by_period(start_date, end_date)
 
         @self.router.get("/revenue/excel")
         async def get_excel_revenue_report(
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> StreamingResponse:
+            """Genera un reporte de ingresos en formato Excel para un período específico."""
             buffer = BytesIO()
             self.service.get_excel_revenue_report(start_date, end_date, buffer)
             buffer.seek(0)
@@ -64,14 +71,16 @@ class ReportController:
             user_id: int,
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> List[Dict[str, Any]]:
+            """Obtiene los pedidos de un cliente en un período específico."""
             return self.service.get_orders_by_customer(user_id, start_date, end_date)
 
         @self.router.get("/inventory-expenses")
         async def get_inventory_expenses(
             start_date: datetime = Query(...),
             end_date: datetime = Query(...),
-            current_user: dict = Depends(has_role([UserRole.administrador])),
-        ):
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> Dict[str, Any]:
+            """Obtiene los gastos de inventario en un período específico."""
             return self.service.get_inventory_expenses(start_date, end_date)
