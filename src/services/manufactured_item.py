@@ -28,6 +28,34 @@ class ManufacturedItemService(BaseServiceImplementation):
         self.manufactured_item_detail_repository = ManufacturedItemDetailRepository()
         self.inventory_item_repository = InventoryItemRepository()
 
+    def get_one(self, id_key: int) -> ResponseManufacturedItemSchema:
+        """Obtiene un item manufacturado por su ID."""
+        manufactured_item = super().get_one(id_key)
+        is_available = self._check_item_availability(manufactured_item)
+        item_dict = manufactured_item.model_dump()
+        item_dict["is_available"] = is_available
+        return ResponseManufacturedItemWithAvailabilitySchema(**item_dict)
+
+    def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
+        """Obtiene todos los items manufacturados con su disponibilidad."""
+        paginated_result = super().get_all(offset, limit)
+
+        items_with_availability = []
+        for item in paginated_result.items:
+            is_available = self._check_item_availability(item)
+            item_dict = item.model_dump()
+            item_dict["is_available"] = is_available
+            items_with_availability.append(
+                ResponseManufacturedItemWithAvailabilitySchema(**item_dict)
+            )
+
+        return PaginatedResponseSchema(
+            total=paginated_result.total,
+            offset=paginated_result.offset,
+            limit=paginated_result.limit,
+            items=items_with_availability,
+        )
+
     def save(
         self, schema: CreateManufacturedItemSchema
     ) -> ResponseManufacturedItemSchema:
@@ -62,28 +90,6 @@ class ManufacturedItemService(BaseServiceImplementation):
             delete_image_from_cloudinary(manufactured_item.image_url)
 
         return self.repository.remove(id_key)
-
-    def get_all_with_availability(
-        self, offset: int = 0, limit: int = 10
-    ) -> PaginatedResponseSchema:
-        """Obtiene todos los items manufacturados con su disponibilidad."""
-        paginated_result = self.get_all(offset, limit)
-
-        items_with_availability = []
-        for item in paginated_result.items:
-            is_available = self._check_item_availability(item)
-            item_dict = item.model_dump()
-            item_dict["is_available"] = is_available
-            items_with_availability.append(
-                ResponseManufacturedItemWithAvailabilitySchema(**item_dict)
-            )
-
-        return PaginatedResponseSchema(
-            total=paginated_result.total,
-            offset=paginated_result.offset,
-            limit=paginated_result.limit,
-            items=items_with_availability,
-        )
 
     def _check_item_availability(
         self, manufactured_item: ResponseManufacturedItemSchema
