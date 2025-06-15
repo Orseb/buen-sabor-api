@@ -21,10 +21,12 @@ class InvoiceController:
 
         @self.router.get("/", response_model=PaginatedResponseSchema)
         async def get_all_invoices(
-            _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero]))
+            offset: int = 0,
+            limit: int = 10,
+            _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero])),
         ) -> PaginatedResponseSchema:
             """Obtiene todas las facturas y notas de crédito."""
-            return self.service.get_all()
+            return self.service.get_all(offset, limit)
 
         @self.router.post(
             "/credit-note/{id_key}",
