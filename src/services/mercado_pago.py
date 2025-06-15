@@ -1,16 +1,19 @@
-from typing import Any, Dict, List
+from typing import Dict
 
 from src.config.mercado_pago import sdk
 from src.config.settings import settings
 from src.schemas.order import ResponseOrderSchema
 
 
-def create_mp_preference(order: ResponseOrderSchema) -> dict:
-    """Create a Mercado Pago preference for an order."""
-    items: List[Dict[str, Any]] = []
-    discount_factor = settings.cash_discount if order.discount else 0
+def create_mp_preference(order: ResponseOrderSchema) -> Dict[str, str]:
+    """Creacion de la preferencia de pago de Mercado Pago."""
+    items = []
+    discount_factor = settings.pickup_discount if order.discount else 0
 
-    def add_item(title, description, quantity, unit_price):
+    def add_item(
+        title: str, description: str, quantity: int, unit_price: float
+    ) -> None:
+        """Funcion helper para agregar un item a la preferencia."""
         items.append(
             {
                 "title": title,

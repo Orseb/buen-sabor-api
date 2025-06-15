@@ -1,5 +1,3 @@
-from typing import Optional
-
 from src.models.user import UserModel, UserRole
 from src.repositories.user import UserRepository
 from src.schemas.auth import GoogleUser
@@ -10,10 +8,10 @@ from src.utils.cloudinary import upload_base64_image_to_cloudinary
 
 
 class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
-    """Service for user operations."""
+    """Servicio para manejar la lógica de negocio relacionada con los usuarios."""
 
     def __init__(self):
-        """Initialize the user service with repository and schemas."""
+
         super().__init__(
             repository=UserRepository(),
             model=UserModel,
@@ -22,8 +20,8 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         )
 
     def update(self, id_key: int, schema: CreateUserSchema) -> ResponseUserSchema:
-        """Update a user and its image"""
-        user = self.get_one(id_key)
+        """Actualiza un usuario existente y maneja la imagen si es necesario."""
+        user = self.repository.find(id_key)
         if schema.image_url and schema.image_url != user.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "users"
@@ -33,12 +31,12 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
     def create_or_update_user_from_google_info(
         self, google_user: GoogleUser
     ) -> ResponseUserSchema:
-        """Create or update a user with information from Google OAuth."""
-        user_email = google_user.email
-
-        existing_user = self.get_one_by("email", user_email)
+        """Crea o actualiza un usuario basado en la información de Google."""
+        existing_user = self.repository.find_by("email", google_user.email)
         if existing_user:
-            return self.update(existing_user.id_key, {"google_sub": google_user.sub})
+            return self.repository.update(
+                existing_user.id_key, {"google_sub": google_user.sub}
+            )
 
         new_user = CreateUserSchema(
             full_name=google_user.name,
@@ -50,16 +48,8 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
 
         return self.save(new_user)
 
-    def get_by_email(self, email: str) -> Optional[ResponseUserSchema]:
-        """Get a user by email."""
-        return self.get_one_by("email", email)
-
-    def get_by_google_sub(self, google_sub: str) -> Optional[ResponseUserSchema]:
-        """Get a user by Google sub."""
-        return self.get_one_by("google_sub", google_sub)
-
     def get_employees(self, offset: int, limit: int) -> PaginatedResponseSchema:
-        """Get all users with employee roles (not clients)."""
+        """Obtiene una lista paginada de empleados."""
         total = self.repository.count_all_employees()
         items = self.repository.get_employees(offset, limit)
         return PaginatedResponseSchema(
@@ -67,7 +57,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         )
 
     def get_clients(self, offset: int, limit: int) -> PaginatedResponseSchema:
-        """Get all users with client roles."""
+        """Obtiene una lista paginada de clientes."""
         total = self.repository.count_all_clients()
         items = self.repository.get_clients(offset, limit)
         return PaginatedResponseSchema(
@@ -77,7 +67,7 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
     def update_employee_password(
         self, id_key: int, new_password: str
     ) -> ResponseUserSchema:
-        """Update the password of an employee."""
+        """Actualiza la contraseña de un empleado."""
         return self.repository.update(
             id_key, {"password": new_password, "first_login": False}
         )

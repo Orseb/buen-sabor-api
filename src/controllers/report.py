@@ -65,22 +65,3 @@ class ReportController:
                     f".xlsx"
                 },
             )
-
-        @self.router.get("/customer-orders/{user_id}")
-        async def get_customer_orders(
-            user_id: int,
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
-            _: dict = Depends(has_role([UserRole.administrador])),
-        ) -> List[Dict[str, Any]]:
-            """Obtiene los pedidos de un cliente en un período específico."""
-            return self.service.get_orders_by_customer(user_id, start_date, end_date)
-
-        @self.router.get("/inventory-expenses")
-        async def get_inventory_expenses(
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
-            _: dict = Depends(has_role([UserRole.administrador])),
-        ) -> Dict[str, Any]:
-            """Obtiene los gastos de inventario en un período específico."""
-            return self.service.get_inventory_expenses(start_date, end_date)

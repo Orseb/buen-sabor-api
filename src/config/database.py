@@ -35,6 +35,6 @@ class Database:
         try:
             with self._engine.connect() as connection:
                 connection.execute(text("SELECT 1"))
-            return "Connection successful"
+                return "Connection successful"
         except Exception as e:
             return f"Connection failed: {e}"

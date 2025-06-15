@@ -98,7 +98,7 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         try:
             await self._send_credit_note_email(updated_invoice)
         except Exception as e:
-            print(f"Failed to send credit note email: {str(e)}")
+            print(f"Error al enviar el correo de la nota de crédito: {str(e)}")
 
         return updated_invoice
 

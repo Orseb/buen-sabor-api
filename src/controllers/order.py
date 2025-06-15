@@ -105,7 +105,7 @@ class OrderController(
             ),
         ) -> PaginatedResponseSchema:
             """Se obtienen los pedidos por estado."""
-            return self.service.get_by_status(status, offset, limit)
+            return self.service.get_all_by("status", status, offset, limit)
 
         @self.router.get("/user/token", response_model=PaginatedResponseSchema)
         async def get_by_user(

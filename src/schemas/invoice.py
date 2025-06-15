@@ -12,7 +12,6 @@ class BaseInvoiceSchema(BaseSchema):
     date: Optional[datetime] = None
     total: float
     type: InvoiceType = InvoiceType.factura
-    pdf_url: Optional[str] = None
 
 
 class CreateInvoiceSchema(BaseInvoiceSchema):

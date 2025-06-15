@@ -19,7 +19,6 @@ class InvoiceModel(BaseModel):
     date = Column(DateTime, server_default=func.now(), nullable=False)
     total = Column(Float, nullable=False)
     type = Column(Enum(InvoiceType), nullable=False, default=InvoiceType.factura)
-    pdf_url = Column(String)
 
     order_id = Column(
         Integer,

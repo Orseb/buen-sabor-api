@@ -41,7 +41,7 @@ class Settings(BaseSettings):
     from_email: Optional[str] = "noreply@elbuensabor.com"
 
     # Misc
-    cash_discount: Optional[float] = 0.1
+    pickup_discount: Optional[float] = 0.1
 
     class Config:
         env_file = ".env"
