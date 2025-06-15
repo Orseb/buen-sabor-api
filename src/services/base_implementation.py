@@ -11,7 +11,7 @@ S = TypeVar("S", bound=BaseSchema)
 
 
 class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
-    """Generic implementation of the BaseService interface."""
+    """Implementación base del servicio para manejar operaciones CRUD comunes"""
 
     def __init__(
         self,
@@ -20,7 +20,7 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         create_schema: Type[BaseSchema],
         response_schema: Type[S],
     ):
-        """Initialize the service with repository, model, and schema types."""
+
         self._repository = repository
         self._model = model
         self.create_schema = create_schema
@@ -28,21 +28,21 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
 
     @property
     def repository(self) -> BaseRepository:
-        """Get the repository for data access."""
+        """Repositorio asociado al servicio"""
         return self._repository
 
     @property
     def schema(self) -> Type[S]:
-        """Get the Pydantic schema class for responses."""
+        """Esquema de validación asociado al servicio"""
         return self.response_schema
 
     @property
     def model(self) -> Type[T]:
-        """Get the SQLAlchemy model class."""
+        """Modelo asociado al servicio"""
         return self._model
 
     def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
-        """Get all records."""
+        """Obtiene todos los registros con paginación"""
         total = self.repository.count_all()
         items = self.repository.find_all(offset, limit)
         return PaginatedResponseSchema(
@@ -50,17 +50,17 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         )
 
     def get_one(self, id_key: int) -> S:
-        """Get a record by primary key."""
+        """Obtiene un registro por su ID"""
         return self.repository.find(id_key)
 
     def get_one_by(self, field_name: str, field_value: Any) -> Optional[S]:
-        """Get a record by a specific field value."""
+        """Obtiene un registro por un campo específico"""
         return self.repository.find_by(field_name, field_value)
 
     def get_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
     ) -> PaginatedResponseSchema:
-        """Get all records by a specific field value."""
+        """Obtiene todos los registros por un campo específico con paginación"""
         total = self.repository.count_all_by(field_name, field_value)
         items = self.repository.find_all_by(field_name, field_value, offset, limit)
         return PaginatedResponseSchema(
@@ -68,13 +68,12 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         )
 
     def save(self, schema: Any) -> S:
-        """Save a new record."""
+        """Guarda un nuevo registro o actualiza uno existente"""
         model_instance = self.to_model(schema)
         return self.repository.save(model_instance)
 
     def update(self, id_key: int, schema_or_dict: Union[Any, Dict[str, Any]]) -> S:
-        """Update an existing record."""
-
+        """Actualiza un registro existente"""
         if isinstance(schema_or_dict, dict):
             changes = schema_or_dict
         else:
@@ -83,11 +82,11 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         return self.repository.update(id_key, changes)
 
     def delete(self, id_key: int) -> S:
-        """Delete a record by primary key."""
+        """Elimina un registro por su ID"""
         return self.repository.remove(id_key)
 
     def to_model(self, schema: Any) -> T:
-        """Convert a schema to a model instance."""
+        """Convierte un esquema a un modelo de base de datos"""
         model_class = self.model
         model_data = schema.model_dump(exclude_unset=True)
         model_instance = model_class(**model_data)
@@ -95,12 +94,15 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
 
     @repository.setter
     def repository(self, value: BaseRepository) -> None:
+        """Establece el repositorio asociado al servicio"""
         self._repository = value
 
     @model.setter
     def model(self, value: Type[T]) -> None:
+        """Establece el modelo asociado al servicio"""
         self._model = value
 
     @schema.setter
     def schema(self, value: Type[S]) -> None:
+        """Establece el esquema de validación asociado al servicio"""
         self.response_schema = value

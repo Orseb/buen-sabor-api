@@ -8,6 +8,7 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class CountryService(BaseServiceImplementation):
+    """Servicio para manejar la lógica de negocio relacionada con los países."""
 
     def __init__(self):
         super().__init__(

@@ -8,6 +8,8 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class InvoiceDetailService(BaseServiceImplementation):
+    """Servicio para manejar la lógica de negocio relacionada con los detalles de las facturas."""
+
     def __init__(self):
         super().__init__(
             repository=InvoiceDetailRepository(),
@@ -15,12 +17,3 @@ class InvoiceDetailService(BaseServiceImplementation):
             create_schema=CreateInvoiceDetailSchema,
             response_schema=ResponseInvoiceDetailSchema,
         )
-
-    def get_by_invoice_id(self, invoice_id: int) -> list[ResponseInvoiceDetailSchema]:
-        """Get all details for a specific invoice."""
-        return self.repository.get_by_invoice_id(invoice_id)
-
-    def calculate_invoice_total(self, invoice_id: int) -> float:
-        """Calculate the total amount for an invoice based on its details."""
-        details = self.get_by_invoice_id(invoice_id)
-        return sum(detail.subtotal for detail in details)

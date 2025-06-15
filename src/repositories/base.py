@@ -32,6 +32,16 @@ class BaseRepository(Generic[T, S], ABC):
         pass
 
     @abstractmethod
+    def count_all(self) -> int:
+        """Count all records in the table."""
+        pass
+
+    @abstractmethod
+    def count_all_by(self, field_name: str, field_value: Any) -> int:
+        """Count records by a specific field value."""
+        pass
+
+    @abstractmethod
     def find(self, id_key: int) -> S:
         """Find record with id_key."""
         pass

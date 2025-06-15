@@ -9,6 +9,7 @@ from src.utils.cloudinary import upload_base64_image_to_cloudinary
 
 
 class InventoryItemService(BaseServiceImplementation):
+    """Servicio para manejar la lógica de negocio relacionada con los artículos de inventario."""
 
     def __init__(self):
         super().__init__(
@@ -19,7 +20,7 @@ class InventoryItemService(BaseServiceImplementation):
         )
 
     def save(self, schema: CreateInventoryItemSchema) -> ResponseInventoryItemSchema:
-        """Save an inventory item"""
+        """Guarda un nuevo artículo de inventario, subiendo la imagen si es necesario."""
         if schema.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "inventory_items"
@@ -30,8 +31,8 @@ class InventoryItemService(BaseServiceImplementation):
     def update(
         self, id_key: int, schema: CreateInventoryItemSchema
     ) -> ResponseInventoryItemSchema:
-        """Update an inventory_item and its image"""
-        inventory_item = self.get_one(id_key)
+        """Actualiza un artículo de inventario existente, subiendo la imagen si es necesario."""
+        inventory_item = self.repository.find(id_key)
         if schema.image_url and schema.image_url != inventory_item.image_url:
             schema.image_url = upload_base64_image_to_cloudinary(
                 schema.image_url, "inventory_items"

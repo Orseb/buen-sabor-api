@@ -9,6 +9,7 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class AddressService(BaseServiceImplementation):
+    """Servicio para manejar las direcciones de los usuarios"""
 
     def __init__(self):
         super().__init__(
@@ -21,23 +22,24 @@ class AddressService(BaseServiceImplementation):
     def create_user_address(
         self, user_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
-        """Create a new address for a user"""
+        """Crea una dirección para un usuario específico"""
         address.user_id = user_id
         return self.save(address)
 
     def update_user_address(
         self, user_id: int, address_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
-        """Update an address for a user"""
+        """Actualiza una dirección de un usuario específico"""
         self.validate_address_ownership(address_id, user_id)
         return self.update(address_id, address)
 
     def delete_user_address(self, user_id: int, address_id: int) -> BaseSchema:
-        """Delete an address for a user"""
+        """Elimina una dirección de un usuario específico"""
         self.validate_address_ownership(address_id, user_id)
         return self.delete(address_id)
 
     def validate_address_ownership(self, address_id: int, user_id: int) -> None:
+        """Valida que la dirección pertenece al usuario"""
         address = self.get_one(address_id)
         if address.user_id != user_id:
-            raise ValueError("Address does not belong to the user")
+            raise ValueError("La dirección no pertenece al usuario especificado")

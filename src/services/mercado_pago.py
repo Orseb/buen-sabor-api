@@ -1,13 +1,14 @@
 from typing import Any, Dict, List
 
 from src.config.mercado_pago import sdk
+from src.config.settings import settings
 from src.schemas.order import ResponseOrderSchema
 
 
 def create_mp_preference(order: ResponseOrderSchema) -> dict:
     """Create a Mercado Pago preference for an order."""
     items: List[Dict[str, Any]] = []
-    discount_factor = 0.9 if order.discount else 1.0
+    discount_factor = settings.cash_discount if order.discount else 0
 
     def add_item(title, description, quantity, unit_price):
         items.append(
@@ -15,7 +16,7 @@ def create_mp_preference(order: ResponseOrderSchema) -> dict:
                 "title": title,
                 "description": description,
                 "quantity": quantity,
-                "unit_price": unit_price * discount_factor,
+                "unit_price": unit_price - (unit_price * discount_factor),
                 "currency_id": "ARS",
             }
         )

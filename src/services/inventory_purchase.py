@@ -12,6 +12,8 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class InventoryPurchaseService(BaseServiceImplementation):
+    """Servicio para manejar las compras de inventario."""
+
     def __init__(self):
         super().__init__(
             repository=InventoryPurchaseRepository(),
@@ -28,16 +30,14 @@ class InventoryPurchaseService(BaseServiceImplementation):
         unit_cost: float,
         notes: Optional[str] = None,
     ) -> ResponseInventoryPurchaseSchema:
-        """Add stock to an inventory item and record the purchase."""
+        """Agrega stock a un artículo de inventario."""
         inventory_item = self.inventory_item_repository.find(inventory_item_id)
-
-        total_cost = quantity * unit_cost
 
         purchase = CreateInventoryPurchaseSchema(
             inventory_item_id=inventory_item_id,
             quantity=quantity,
             unit_cost=unit_cost,
-            total_cost=total_cost,
+            total_cost=quantity * unit_cost,
             notes=notes,
             purchase_date=datetime.now(),
         )

@@ -1,4 +1,4 @@
-from fastapi import HTTPException
+from fastapi import HTTPException, Request
 from fastapi.responses import JSONResponse
 from psycopg2.errors import ForeignKeyViolation, UniqueViolation
 from sqlalchemy.exc import IntegrityError
@@ -6,7 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from src.repositories.base_implementation import RecordNotFoundError
 
 
-async def http_exception_handler(exc: HTTPException) -> JSONResponse:
+async def http_exception_handler(_: Request, exc: HTTPException) -> JSONResponse:
     """Manejador de excepciones HTTP personalizado."""
     return JSONResponse(
         status_code=exc.status_code,
@@ -14,7 +14,7 @@ async def http_exception_handler(exc: HTTPException) -> JSONResponse:
     )
 
 
-async def not_found_error_handler(exc: RecordNotFoundError) -> JSONResponse:
+async def not_found_error_handler(_: Request, exc: RecordNotFoundError) -> JSONResponse:
     """Manejador de excepciones para registros no encontrados."""
     return JSONResponse(
         status_code=404,
@@ -22,7 +22,7 @@ async def not_found_error_handler(exc: RecordNotFoundError) -> JSONResponse:
     )
 
 
-async def value_error_handler(exc: ValueError) -> JSONResponse:
+async def value_error_handler(_: Request, exc: ValueError) -> JSONResponse:
     """Manejador de excepciones para errores de valor."""
     return JSONResponse(
         status_code=400,
@@ -30,7 +30,7 @@ async def value_error_handler(exc: ValueError) -> JSONResponse:
     )
 
 
-async def integrity_error_handler(exc: IntegrityError) -> JSONResponse:
+async def integrity_error_handler(_: Request, exc: IntegrityError) -> JSONResponse:
     """Manejador de excepciones para errores de integridad en la base de datos."""
     if isinstance(exc.orig, ForeignKeyViolation):
         return JSONResponse(
@@ -48,7 +48,7 @@ async def integrity_error_handler(exc: IntegrityError) -> JSONResponse:
     )
 
 
-async def global_exception_handler(exc: Exception) -> JSONResponse:
+async def global_exception_handler(_: Request, exc: Exception) -> JSONResponse:
     """Manejador de excepciones global para errores no controlados."""
     return JSONResponse(
         status_code=500,

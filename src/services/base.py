@@ -11,64 +11,64 @@ S = TypeVar("S", bound=BaseSchema)
 
 
 class BaseService(Generic[T, S], ABC):
-    """Abstract base service defining the interface for business logic operations."""
+    """Servicio base para manejar operaciones CRUD comunes"""
 
     @property
     @abstractmethod
     def repository(self) -> BaseRepository:
-        """Get the repository for data access."""
+        """Repositorio asociado al servicio"""
         pass
 
     @property
     @abstractmethod
     def schema(self) -> Type[S]:
-        """Get the Pydantic schema class for responses."""
+        """Esquema de validación asociado al servicio"""
         pass
 
     @property
     @abstractmethod
     def model(self) -> Type[T]:
-        """Get the SQLAlchemy model class."""
+        """Modelo asociado al servicio"""
         pass
 
     @abstractmethod
     def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
-        """Get all records."""
+        """Obtiene todos los registros con paginación"""
         pass
 
     @abstractmethod
     def get_one(self, id_key: int) -> S:
-        """Get a record by primary key."""
+        """Obtiene un registro por su ID"""
         pass
 
     @abstractmethod
     def get_one_by(self, field_name: str, field_value: Any) -> Optional[S]:
-        """Get a record by a specific field value."""
+        """Obtiene un registro por un campo específico"""
         pass
 
     @abstractmethod
     def get_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
     ) -> PaginatedResponseSchema:
-        """Get all records by a specific field value."""
+        """Obtiene todos los registros por un campo específico con paginación"""
         pass
 
     @abstractmethod
     def save(self, schema: Any) -> S:
-        """Save a new record."""
+        """Guarda un nuevo registro o actualiza uno existente"""
         pass
 
     @abstractmethod
     def update(self, id_key: int, schema_or_dict: Union[Any, Dict[str, Any]]) -> S:
-        """Update an existing record."""
+        """Actualiza un registro existente"""
         pass
 
     @abstractmethod
     def delete(self, id_key: int) -> S:
-        """Delete a record by primary key."""
+        """Elimina un registro por su ID"""
         pass
 
     @abstractmethod
     def to_model(self, schema: Any) -> T:
-        """Convert a schema to a model instance."""
+        """Convierte un esquema a un modelo de base de datos"""
         pass

@@ -1,5 +1,6 @@
 from typing import List
 
+from src.config.settings import settings
 from src.models.order import DeliveryMethod, OrderModel, OrderStatus
 from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.manufactured_item import ManufacturedItemRepository
@@ -19,10 +20,8 @@ from src.services.mercado_pago import create_mp_preference
 
 
 class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
-    """Service for order operations."""
 
     def __init__(self):
-        """Initialize the order service with repositories and related services."""
         super().__init__(
             repository=OrderRepository(),
             model=OrderModel,
@@ -39,7 +38,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         self.user_repository = UserRepository()
 
     def save(self, schema: CreateOrderSchema) -> ResponseOrderSchema:
-        """Save an order with its details and update inventory stock."""
+
         details = self._process_details(schema.details)
         inventory_details = self._process_inventory_details(schema.inventory_details)
 
@@ -79,7 +78,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         return inventory_details
 
     def _update_detail_stock(self, detail: CreateOrderDetailSchema) -> None:
-        """Update inventory stock based on order details."""
+
         manufactured_item = self.manufactured_item_repository.find(
             detail.manufactured_item_id
         )
@@ -102,7 +101,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
     def _update_inventory_detail_stock(
         self, inventory_detail: CreateOrderInventoryDetailSchema
     ) -> None:
-        """Update inventory stock based on order inventory details."""
+
         inventory_item = self.inventory_item_repository.find(
             inventory_detail.inventory_item_id
         )
@@ -122,12 +121,14 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         details: List[CreateOrderDetailSchema],
         inventory_details: List[CreateOrderInventoryDetailSchema],
     ) -> dict:
-        """Calculate order totals, discount, and final total."""
+
         total = sum(detail.subtotal for detail in details) + sum(
             inventory_detail.subtotal for inventory_detail in inventory_details
         )
         discount = (
-            total * 0.1 if delivery_method == DeliveryMethod.pickup.value else 0.0
+            total * settings.cash_discount
+            if delivery_method == DeliveryMethod.pickup.value
+            else 0.0
         )
         final_total = total - discount
         estimated_time = self._calculate_estimated_time(delivery_method, details)
@@ -143,7 +144,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         delivery_method: DeliveryMethod,
         order_details: List[CreateOrderDetailSchema],
     ) -> float:
-        """Calculate estimated time for order preparation."""
+
         items_prep_time = sum(
             self.manufactured_item_repository.find(
                 detail.manufactured_item_id
@@ -165,7 +166,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
     def get_by_status(
         self, status: OrderStatus, offset: int = 0, limit: int = 10
     ) -> PaginatedResponseSchema:
-        """Get orders by status."""
+
         total = self.repository.count_all_by_status(status)
         items = self.repository.find_by_status(status, offset, limit)
         return PaginatedResponseSchema(
@@ -175,7 +176,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
     def get_by_user(
         self, user_id: int, status: OrderStatus | None, offset: int, limit: int
     ) -> PaginatedResponseSchema:
-        """Get orders by user."""
+
         total = self.repository.count_all_by_user(user_id, status)
         items = self.repository.find_by_user(user_id, status, offset, limit)
         return PaginatedResponseSchema(
@@ -183,13 +184,13 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
 
     def update_status(self, order_id: int, status: OrderStatus) -> ResponseOrderSchema:
-        """Update order status."""
+
         return self.update(order_id, {"status": status})
 
     async def process_cash_payment(
         self, order: ResponseOrderSchema
     ) -> ResponseOrderSchema:
-        """Process cash payment for an order."""
+
         await self.invoice_service.generate_invoice(order.id_key)
         return self.update(
             order.id_key,
@@ -200,7 +201,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
 
     async def process_mp_payment(self, order: ResponseOrderSchema) -> str:
-        """Process Mercado Pago payment for an order."""
+
         payment_data = create_mp_preference(order)
         await self.invoice_service.generate_invoice(order.id_key)
 
@@ -212,7 +213,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         return payment_data["payment_url"]
 
     def add_delay(self, order_id: int, delay_minutes: int) -> ResponseOrderSchema:
-        """Add a delay to the estimated time of an order."""
+
         order = self.get_one(order_id)
         new_estimated_time = order.estimated_time + delay_minutes
         return self.update(order_id, {"estimated_time": new_estimated_time})

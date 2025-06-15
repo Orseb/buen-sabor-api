@@ -40,6 +40,9 @@ class Settings(BaseSettings):
     smtp_use_tls: Optional[bool] = False
     from_email: Optional[str] = "noreply@elbuensabor.com"
 
+    # Misc
+    cash_discount: Optional[float] = 0.1
+
     class Config:
         env_file = ".env"
         case_sensitive = False

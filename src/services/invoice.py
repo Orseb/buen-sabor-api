@@ -1,55 +1,38 @@
 import io
 import uuid
 from datetime import datetime
+from typing import Any, Dict
 
 from src.models.invoice import InvoiceModel, InvoiceType
 from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.invoice import InvoiceRepository
+from src.repositories.manufactured_item import ManufacturedItemRepository
+from src.repositories.order import OrderRepository
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.schemas.invoice_detail import CreateInvoiceDetailSchema
+from src.schemas.order import ResponseOrderSchema
 from src.services.base_implementation import BaseServiceImplementation
-from src.services.invoice_detail import InvoiceDetailService
 from src.utils.email import send_credit_note_email, send_invoice_email
 from src.utils.reportlab import generate_pdf_report
 
 
 class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSchema]):
-    """Service for invoice operations."""
+    """Servicio para manejar la lógica de negocio relacionada con las facturas."""
 
     def __init__(self):
-        """Initialize the invoice service with repository and related services."""
         super().__init__(
             repository=InvoiceRepository(),
             model=InvoiceModel,
             create_schema=CreateInvoiceSchema,
             response_schema=ResponseInvoiceSchema,
         )
-        self._order_service = None
-        self._inventory_item_service = None
+        self.order_repository = OrderRepository()
         self.inventory_item_repository = InventoryItemRepository()
-        self.invoice_detail_service = InvoiceDetailService()
-
-    @property
-    def order_service(self):
-        """Lazy-loaded order service to avoid circular imports."""
-        if self._order_service is None:
-            from src.services.order import OrderService
-
-            self._order_service = OrderService()
-        return self._order_service
-
-    @property
-    def inventory_item_service(self):
-        """Lazy-loaded inventory item service to avoid circular imports."""
-        if self._inventory_item_service is None:
-            from src.services.inventory_item import InventoryItemService
-
-            self._inventory_item_service = InventoryItemService()
-        return self._inventory_item_service
+        self.manufactured_item_repository = ManufacturedItemRepository()
 
     async def generate_invoice(self, order_id: int) -> ResponseInvoiceSchema:
-        """Generate an invoice for an order with detailed line items and send it via email."""
-        order = self.order_service.get_one(order_id)
+        """Genera una factura para un pedido dado."""
+        order = self.order_repository.find(order_id)
 
         invoice_number = (
             f"INV-{datetime.now().strftime('%Y%m%d')}-{uuid.uuid4().hex[:6].upper()}"
@@ -95,52 +78,14 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         try:
             await self._send_invoice_email(saved_invoice)
         except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send invoice email: {str(e)}")
+            print(f"Error al enviar el correo de la factura: {str(e)}")
 
         return saved_invoice
 
-    async def _send_invoice_email(self, invoice: ResponseInvoiceSchema) -> None:
-        """Generate PDF and send invoice email to customer."""
-        invoice_items = [
-            {
-                "name": detail.item_name,
-                "quantity": detail.quantity,
-                "unit_price": detail.unit_price,
-                "type": detail.item_type,
-                "total": detail.subtotal,
-            }
-            for detail in invoice.details
-        ]
-
-        invoice_data = {
-            "number": invoice.number,
-            "date": invoice.date,
-            "user_name": invoice.order.user.full_name,
-            "items": invoice_items,
-            "subtotal": invoice.order.total,
-            "discount": invoice.order.discount,
-            "total": invoice.total,
-        }
-
-        buffer = io.BytesIO()
-        generate_pdf_report(invoice_data, buffer, "Factura")
-        pdf_data = buffer.getvalue()
-        buffer.close()
-
-        await send_invoice_email(
-            customer_email=invoice.order.user.email,
-            customer_name=invoice.order.user.full_name,
-            invoice_number=invoice.number,
-            pdf_data=pdf_data,
-        )
-
     async def generate_credit_note(self, invoice_id: int) -> ResponseInvoiceSchema:
-        """Generate a credit note for an invoice and send it via email."""
+        """Genera una nota de crédito para una factura existente."""
         invoice = self.repository.find(invoice_id)
-        self._restore_inventory_stock(invoice.order.id_key)
+        self._restore_inventory_stock(invoice.order)
 
         updated_invoice = self.repository.update(
             invoice_id,
@@ -153,36 +98,28 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         try:
             await self._send_credit_note_email(updated_invoice)
         except Exception as e:
-            import logging
-
-            logger = logging.getLogger(__name__)
-            logger.error(f"Failed to send credit note email: {str(e)}")
+            print(f"Failed to send credit note email: {str(e)}")
 
         return updated_invoice
 
+    async def _send_invoice_email(self, invoice: ResponseInvoiceSchema) -> None:
+        """Envía un correo electrónico con la factura en formato PDF."""
+        invoice_data = self._proces_invoice_details(invoice)
+        buffer = io.BytesIO()
+        generate_pdf_report(invoice_data, buffer, "Factura")
+        pdf_data = buffer.getvalue()
+        buffer.close()
+
+        await send_invoice_email(
+            customer_email=invoice.order.user.email,
+            customer_name=invoice.order.user.full_name,
+            invoice_number=invoice.number,
+            pdf_data=pdf_data,
+        )
+
     async def _send_credit_note_email(self, invoice: ResponseInvoiceSchema) -> None:
-        """Generate PDF and send credit note email to customer."""
-        invoice_items = [
-            {
-                "name": detail.item_name,
-                "quantity": detail.quantity,
-                "unit_price": detail.unit_price,
-                "type": detail.item_type,
-                "total": detail.subtotal,
-            }
-            for detail in invoice.details
-        ]
-
-        invoice_data = {
-            "number": invoice.number,
-            "date": invoice.date,
-            "user_name": invoice.order.user.full_name,
-            "items": invoice_items,
-            "subtotal": invoice.order.total,
-            "discount": invoice.order.discount,
-            "total": invoice.total,
-        }
-
+        """Envía un correo electrónico con la nota de crédito en formato PDF."""
+        invoice_data = self._proces_invoice_details(invoice)
         buffer = io.BytesIO()
         generate_pdf_report(invoice_data, buffer, "Nota de Crédito")
         pdf_data = buffer.getvalue()
@@ -195,27 +132,48 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
             pdf_data=pdf_data,
         )
 
-    def _restore_inventory_stock(self, order_id: int) -> None:
-        """Restore inventory stock based on order details."""
-        order = self.order_service.get_one(order_id)
+    @staticmethod
+    def _proces_invoice_details(invoice: ResponseInvoiceSchema) -> Dict[str, Any]:
+        """Procesa los detalles de la factura para su uso interno."""
+        invoice_items = [
+            {
+                "name": detail.item_name,
+                "quantity": detail.quantity,
+                "unit_price": detail.unit_price,
+                "type": detail.item_type,
+                "total": detail.subtotal,
+            }
+            for detail in invoice.details
+        ]
 
+        return {
+            "number": invoice.number,
+            "date": invoice.date,
+            "user_name": invoice.order.user.full_name,
+            "items": invoice_items,
+            "subtotal": invoice.order.total,
+            "discount": invoice.order.discount,
+            "total": invoice.total,
+        }
+
+    def _restore_inventory_stock(self, order: ResponseOrderSchema) -> None:
+        """Restaura el stock de inventario basado en los detalles del pedido."""
         for detail in order.details:
-            from src.services.manufactured_item import ManufacturedItemService
-
-            manufactured_item_service = ManufacturedItemService()
-
-            manufactured_item = manufactured_item_service.get_one(
-                detail.manufactured_item.id_key
-            )
-
-            for item_detail in manufactured_item.details:
-                inventory_item = self.inventory_item_service.get_one(
-                    item_detail.inventory_item.id_key
+            for manufactured_item_detail in detail.manufactured_item.details:
+                quantity_to_add = manufactured_item_detail.quantity * detail.quantity
+                new_stock = (
+                    manufactured_item_detail.inventory_item.current_stock
+                    + quantity_to_add
                 )
 
-                quantity_to_add = item_detail.quantity * detail.quantity
-
-                new_stock = inventory_item.current_stock + quantity_to_add
                 self.inventory_item_repository.update(
-                    inventory_item.id_key, {"current_stock": new_stock}
+                    manufactured_item_detail.inventory_item.id_key,
+                    {"current_stock": new_stock},
                 )
+
+        for detail in order.inventory_details:
+            new_stock = detail.inventory_item.current_stock + detail.quantity
+
+            self.inventory_item_repository.update(
+                detail.inventory_item.id_key, {"current_stock": new_stock}
+            )

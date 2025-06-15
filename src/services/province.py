@@ -8,6 +8,7 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class ProvinceService(BaseServiceImplementation):
+    """Servicio para manejar la lógica de negocio relacionada con las provincias."""
 
     def __init__(self):
         super().__init__(

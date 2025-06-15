@@ -1,4 +1,3 @@
-import logging
 from email.mime.application import MIMEApplication
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -7,8 +6,6 @@ import aiosmtplib
 from pydantic import EmailStr
 
 from src.config.settings import settings
-
-logger = logging.getLogger(__name__)
 
 
 async def send_email_with_attachment(
@@ -42,11 +39,11 @@ async def send_email_with_attachment(
             use_tls=settings.smtp_use_tls,
         )
 
-        logger.info(f"Email enviado a {to_email} con éxito.")
+        print(f"Email enviado a {to_email} con éxito.")
         return True
 
     except Exception as e:
-        logger.error(f"Error al enviar el email a {to_email}: {e}")
+        print(f"Error al enviar el email a {to_email}: {e}")
         return False
 
 

@@ -1,4 +1,3 @@
-import logging
 from contextlib import contextmanager
 from typing import Any, Dict, Generic, Iterator, List, Optional, Type, TypeVar
 
@@ -32,7 +31,6 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         self._model = model
         self._create_schema = create_schema
         self._response_schema = response_schema
-        self.logger = logging.getLogger(f"{__name__}.{self.__class__.__name__}")
         self._session_factory = scoped_session(sessionmaker(bind=Database().engine))
 
     @property
@@ -59,7 +57,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             yield session
             session.commit()
         except Exception as e:
-            self.logger.error("Session rollback because of error: %s", str(e))
+            print(f"Session rollback due to error: {e}")
             session.rollback()
             raise
         finally:

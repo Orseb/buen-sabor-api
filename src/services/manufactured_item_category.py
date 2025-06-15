@@ -1,3 +1,5 @@
+from typing import Any
+
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
 from src.repositories.manufactured_item_category import (
     ManufacturedItemCategoryRepository,
@@ -11,6 +13,7 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class ManufacturedItemCategoryService(BaseServiceImplementation):
+    """Servicio para manejar la lógica de negocio relacionada con las categorías de productos."""
 
     def __init__(self):
         super().__init__(
@@ -23,44 +26,45 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
     def save(
         self, schema: CreateManufacturedItemCategorySchema
     ) -> ResponseManufacturedItemCategorySchema:
-        """Save a category with validation for subcategory constraints."""
-        if schema.parent_id is not None:
-            parent = self.get_one(schema.parent_id)
-            if parent.parent_id is not None:
-                raise ValueError("Subcategories cannot have their own subcategories")
+        """Guarda una nueva categoría de productos, verificando las reglas de jerarquía."""
+        if schema.parent_id:
+            parent = self.repository.find(schema.parent_id)
+            if parent.parent_id:
+                raise ValueError("Las subcategorías no pueden tener subcategorías.")
 
         return super().save(schema)
 
     def update(
-        self, id_key: int, schema_or_dict
+        self,
+        id_key: int,
+        schema_or_dict: CreateManufacturedItemCategorySchema | dict[str, Any],
     ) -> ResponseManufacturedItemCategorySchema:
-        """Update a category with validation for subcategory constraints."""
-        current = self.get_one(id_key)
-
+        """Actualiza una categoría de productos, verificando las reglas de jerarquía."""
+        current_category = self.repository.find(id_key)
         if (
-            hasattr(current, "subcategories")
-            and current.subcategories
-            and getattr(schema_or_dict, "parent_id", None) is not None
+            hasattr(current_category, "subcategories")
+            and current_category.subcategories
+            and getattr(schema_or_dict, "parent_id", None)
         ):
             raise ValueError(
-                "Categories with subcategories cannot become subcategories"
+                "Las categorías con subcategorías no pueden convertirse en subcategorias."
             )
 
         parent_id = getattr(schema_or_dict, "parent_id", None)
-        if parent_id is not None:
+        if parent_id:
             if parent_id == id_key:
-                raise ValueError("A category cannot be its own parent")
+                raise ValueError("Una categoría no puede ser su propio padre.")
 
-            parent = self.get_one(parent_id)
-            if parent.parent_id is not None:
-                raise ValueError("Subcategories cannot have their own subcategories")
+            parent = self.repository.find(parent_id)
+            if parent.parent_id:
+                raise ValueError("Las subcategorías no pueden tener subcategorías.")
 
         return super().update(id_key, schema_or_dict)
 
     def get_top_level_categories(
         self, offset: int, limit: int
     ) -> PaginatedResponseSchema:
-        """Get all top-level categories."""
+        """Obtiene las categorías de productos de nivel superior con paginación."""
         total = self.repository.count_all_top_level()
         items = self.repository.get_top_level_categories(offset, limit)
         return PaginatedResponseSchema(

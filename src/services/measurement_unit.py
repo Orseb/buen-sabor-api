@@ -8,6 +8,7 @@ from src.services.base_implementation import BaseServiceImplementation
 
 
 class MeasurementUnitService(BaseServiceImplementation):
+    """Servicio para manejar unidades de medida."""
 
     def __init__(self):
         super().__init__(
