@@ -7,6 +7,8 @@ from src.schemas.manufactured_item_detail import (
 
 
 class ManufacturedItemDetailRepository(BaseRepositoryImplementation):
+    """Repositorio para detalles de artículos manufacturados."""
+
     def __init__(self):
         super().__init__(
             model=ManufacturedItemDetailModel,

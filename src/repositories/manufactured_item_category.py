@@ -7,6 +7,8 @@ from src.schemas.manufactured_item_category import (
 
 
 class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
+    """Repositoriorio para manejar las categorías de artículos manufacturados."""
+
     def __init__(self):
         super().__init__(
             model=ManufacturedItemCategoryModel,
@@ -15,6 +17,7 @@ class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
         )
 
     def count_all_top_level(self) -> int:
+        """Cuenta todas las categorías de nivel superior activas."""
         with self.session_scope() as session:
             return (
                 session.query(self.model)
@@ -24,9 +27,9 @@ class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
             )
 
     def get_top_level_categories(
-        self, offset, limit
+        self, offset: int, limit: int
     ) -> list[ResponseManufacturedItemCategorySchema]:
-        """Retrieve all top-level categories."""
+        """Obtiene todas las categorías de nivel superior activas con paginación."""
         with self.session_scope() as session:
             categories = (
                 session.query(self.model)

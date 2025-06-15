@@ -1,3 +1,5 @@
+from typing import List
+
 from src.models.manufactured_item import ManufacturedItemModel
 from src.models.manufactured_item_detail import ManufacturedItemDetailModel
 from src.repositories.base_implementation import (
@@ -8,9 +10,12 @@ from src.schemas.manufactured_item import (
     CreateManufacturedItemSchema,
     ResponseManufacturedItemSchema,
 )
+from src.schemas.manufactured_item_detail import CreateManufacturedItemDetailSchema
 
 
 class ManufacturedItemRepository(BaseRepositoryImplementation):
+    """Repositorio para manejar las operaciones de artículos manufacturados."""
+
     def __init__(self):
         super().__init__(
             model=ManufacturedItemModel,
@@ -19,9 +24,11 @@ class ManufacturedItemRepository(BaseRepositoryImplementation):
         )
 
     def save_with_details(
-        self, manufactured_item_model, details
+        self,
+        manufactured_item_model: ManufacturedItemModel,
+        details: List[CreateManufacturedItemDetailSchema],
     ) -> ResponseManufacturedItemSchema:
-        """Save a manufactured item along with its details."""
+        """Guarda un artículo manufacturado junto con sus detalles."""
         with self.session_scope() as session:
             session.add(manufactured_item_model)
             session.flush()
@@ -38,9 +45,12 @@ class ManufacturedItemRepository(BaseRepositoryImplementation):
             return self.schema.model_validate(manufactured_item_model)
 
     def update_with_details(
-        self, id_key, schema, details
+        self,
+        id_key: int,
+        schema: CreateManufacturedItemSchema,
+        details: List[CreateManufacturedItemDetailSchema],
     ) -> ResponseManufacturedItemSchema:
-        """Update a manufactured item along with its details."""
+        """Actualiza un artículo manufacturado junto con sus detalles."""
         with self.session_scope() as session:
             manufactured_item_model = session.get(self.model, id_key)
             if manufactured_item_model is None:

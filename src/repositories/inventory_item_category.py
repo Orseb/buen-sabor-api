@@ -7,6 +7,8 @@ from src.schemas.inventory_item_category import (
 
 
 class InventoryItemCategoryRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de categorías de artículos de inventario."""
+
     def __init__(self):
         super().__init__(
             model=InventoryItemCategoryModel,
@@ -15,6 +17,7 @@ class InventoryItemCategoryRepository(BaseRepositoryImplementation):
         )
 
     def count_all_top_level(self) -> int:
+        """Cuenta todas las categorías de nivel superior activas."""
         with self.session_scope() as session:
             return (
                 session.query(self.model)
@@ -24,9 +27,9 @@ class InventoryItemCategoryRepository(BaseRepositoryImplementation):
             )
 
     def get_top_level_categories(
-        self, offset, limit
+        self, offset: int, limit: int
     ) -> list[ResponseInventoryItemCategorySchema]:
-        """Retrieve all top-level categories."""
+        """Obtiene todas las categorías de nivel superior activas con paginación."""
         with self.session_scope() as session:
             categories = (
                 session.query(self.model)

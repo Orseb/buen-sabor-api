@@ -7,6 +7,8 @@ from src.schemas.measurement_unit import (
 
 
 class MeasurementUnitRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de unidades de medida."""
+
     def __init__(self):
         super().__init__(
             model=MeasurementUnitModel,

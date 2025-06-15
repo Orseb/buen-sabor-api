@@ -7,6 +7,8 @@ from src.schemas.inventory_item import (
 
 
 class InventoryItemRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de artículos de inventario."""
+
     def __init__(self):
         super().__init__(
             model=InventoryItemModel,

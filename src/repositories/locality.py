@@ -7,6 +7,8 @@ from src.schemas.locality import (
 
 
 class LocalityRepository(BaseRepositoryImplementation):
+    """Repositorio para manejar las operaciones de localidad."""
+
     def __init__(self):
         super().__init__(
             model=LocalityModel,

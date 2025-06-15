@@ -11,69 +11,69 @@ S = TypeVar("S", bound=BaseSchema)
 
 
 class BaseRepository(Generic[T, S], ABC):
-    """Abstract base repository defining the interface for data access operations."""
+    """Interfaz base para repositorios de datos."""
 
     @property
     @abstractmethod
     def session(self) -> Session:
-        """Get the SQLAlchemy session."""
+        """Obtiene la sesión de la base de datos."""
         pass
 
     @property
     @abstractmethod
     def model(self) -> Type[T]:
-        """Get the SQLAlchemy model class."""
+        """Obtiene el modelo de la base de datos."""
         pass
 
     @property
     @abstractmethod
     def schema(self) -> Type[S]:
-        """Get the Pydantic schema class for responses."""
+        """Obtiene el esquema de respuesta."""
         pass
 
     @abstractmethod
     def count_all(self) -> int:
-        """Count all records in the table."""
+        """Cuenta todos los registros en la base de datos."""
         pass
 
     @abstractmethod
     def count_all_by(self, field_name: str, field_value: Any) -> int:
-        """Count records by a specific field value."""
+        """Cuenta los registros por un campo específico."""
         pass
 
     @abstractmethod
     def find(self, id_key: int) -> S:
-        """Find record with id_key."""
+        """Encuentra un registro por su ID."""
         pass
 
     @abstractmethod
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
-        """Find a record by a specific field value."""
+        """Encuentra un registro por un campo específico."""
         pass
 
     @abstractmethod
     def find_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
     ) -> List[S]:
-        """Find all records by a specific field value."""
+        """Encuentra todos los registros por un campo específico y paginación."""
         pass
 
     @abstractmethod
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
-        """Find all records."""
+        """Encuentra todos los registros con paginación."""
         pass
 
     @abstractmethod
     def save(self, model: T) -> S:
-        """Save a new record."""
+        """Guarda un nuevo registro en la base de datos."""
         pass
 
     @abstractmethod
     def update(self, id_key: int, changes: Dict[str, Any]) -> S:
-        """Update an existing record."""
+        """Actualiza un registro existente en la base de datos."""
         pass
 
     @abstractmethod
     def remove(self, id_key: int) -> S:
-        """Delete a record by primary key."""
+        """Elimina un registro de la base de datos."""
         pass

@@ -12,7 +12,7 @@ from src.utils.rbac import get_current_user, has_role
 
 
 class UserController(BaseControllerImplementation):
-    """Controlador para gerenciar usuarios."""
+    """Controlador para manejar usuarios."""
 
     def __init__(self):
         super().__init__(

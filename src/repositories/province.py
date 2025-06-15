@@ -7,6 +7,8 @@ from src.schemas.province import (
 
 
 class ProvinceRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de provincias."""
+
     def __init__(self):
         super().__init__(
             model=ProvinceModel,

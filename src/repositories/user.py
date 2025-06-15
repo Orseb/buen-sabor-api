@@ -6,6 +6,8 @@ from src.schemas.user import CreateUserSchema, ResponseUserSchema
 
 
 class UserRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de usuarios."""
+
     def __init__(self):
         super().__init__(
             model=UserModel,
@@ -14,7 +16,7 @@ class UserRepository(BaseRepositoryImplementation):
         )
 
     def count_all_employees(self) -> int:
-        """Count all employees (users with non-client roles)."""
+        """Cuenta todos los empleados activos."""
         with self.session_scope() as session:
             count = (
                 session.query(self.model)
@@ -26,7 +28,7 @@ class UserRepository(BaseRepositoryImplementation):
             return count
 
     def count_all_clients(self) -> int:
-        """Count all users with client roles."""
+        """Cuenta todos los clientes activos."""
         with self.session_scope() as session:
             count = (
                 session.query(self.model)
@@ -39,7 +41,7 @@ class UserRepository(BaseRepositoryImplementation):
     def get_employees(
         self, offset: int = 0, limit: int = 10
     ) -> List[ResponseUserSchema]:
-        """Get all employees (users with non-client roles)."""
+        """Obtiene una lista de empleados activos."""
         with self.session_scope() as session:
             employees = (
                 session.query(self.model)
@@ -53,7 +55,7 @@ class UserRepository(BaseRepositoryImplementation):
             return [self.schema.model_validate(employee) for employee in employees]
 
     def get_clients(self, offset: int, limit: int) -> List[ResponseUserSchema]:
-        """Get all users with client roles."""
+        """Obtiene una lista de clientes activos."""
         with self.session_scope() as session:
             clients = (
                 session.query(self.model)
@@ -66,7 +68,7 @@ class UserRepository(BaseRepositoryImplementation):
             return [self.schema.model_validate(client) for client in clients]
 
     def count_all_cookies(self) -> int:
-        """Get all users with cook roles."""
+        """Cuenta todos los cocineros activos."""
         with self.session_scope() as session:
             count = (
                 session.query(self.model)

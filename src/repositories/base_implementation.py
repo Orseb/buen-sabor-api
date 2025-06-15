@@ -13,13 +13,13 @@ S = TypeVar("S", bound=BaseSchema)
 
 
 class RecordNotFoundError(Exception):
-    """Exception raised when a record is not found in the database."""
+    """Excepción personalizada para indicar que no se encontró un registro."""
 
     pass
 
 
 class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
-    """Generic implementation of the BaseRepository interface."""
+    """Implementación base del repositorio genérico para manejar operaciones CRUD."""
 
     def __init__(
         self,
@@ -27,7 +27,6 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
         create_schema: Type[BaseSchema],
         response_schema: Type[S],
     ):
-        """Initialize the repository with model and schema types."""
         self._model = model
         self._create_schema = create_schema
         self._response_schema = response_schema
@@ -35,23 +34,24 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
 
     @property
     def session(self):
+        """Proporciona acceso a la sesión de la base de datos."""
         raise NotImplementedError(
             "Direct session access is not supported. Use session_scope()."
         )
 
     @property
     def model(self) -> Type[T]:
-        """Get the SQLAlchemy model class."""
+        """Devuelve el modelo asociado al repositorio."""
         return self._model
 
     @property
     def schema(self) -> Type[S]:
-        """Get the Pydantic schema class for responses."""
+        """Devuelve el esquema de respuesta asociado al repositorio."""
         return self._response_schema
 
     @contextmanager
     def session_scope(self) -> Iterator[Session]:
-        """Provide a transactional scope around a series of operations."""
+        """Context manager para manejar la sesión de la base de datos."""
         session: Session = self._session_factory()
         try:
             yield session
@@ -64,11 +64,12 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             session.close()
 
     def count_all(self) -> int:
+        """Cuenta todos los registros activos en la tabla del modelo."""
         with self.session_scope() as session:
             return session.query(self.model).filter_by(active=True).count()
 
     def count_all_by(self, field_name: str, field_value: Any) -> int:
-        """Count all records by a specific field value."""
+        """Cuenta los registros activos filtrados por un campo específico."""
         with self.session_scope() as session:
             return (
                 session.query(self.model)
@@ -78,7 +79,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             )
 
     def find(self, id_key: int) -> S:
-        """Find record with id_key."""
+        """Busca un registro por su ID y devuelve el modelo validado por el esquema."""
         with self.session_scope() as session:
             model = session.get(self.model, id_key)
             if model is None or not getattr(model, "active", True):
@@ -86,7 +87,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             return self.schema.model_validate(model)
 
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
-        """Find a record by a specific field value."""
+        """Busca un registro por un campo específico y devuelve modelo validado por el esquema."""
         with self.session_scope() as session:
             model = (
                 session.query(self.model)
@@ -101,7 +102,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
     def find_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
     ) -> List[S]:
-        """Find all records by a specific field value."""
+        """Busca todos los registros activos filtrados por un campo específico."""
         with self.session_scope() as session:
             models = (
                 session.query(self.model)
@@ -114,7 +115,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             return [self.schema.model_validate(model) for model in models]
 
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
-        """Find all records."""
+        """Busca todos los registros activos con paginación."""
         with self.session_scope() as session:
             models = (
                 session.query(self.model)
@@ -126,7 +127,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             return [self.schema.model_validate(model) for model in models]
 
     def save(self, model: T) -> S:
-        """Save a new record."""
+        """Guarda un nuevo registro y devuelve el modelo validado por el esquema."""
         with self.session_scope() as session:
             session.add(model)
             session.flush()
@@ -134,7 +135,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             return self.schema.model_validate(model)
 
     def update(self, id_key: int, changes: Dict[str, Any]) -> S:
-        """Update an existing record."""
+        """Actualiza un registro existente y devuelve el modelo validado por el esquema."""
         with self.session_scope() as session:
             model = session.get(self.model, id_key)
             if model is None:
@@ -149,7 +150,7 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             return self.schema.model_validate(model)
 
     def remove(self, id_key: int) -> S:
-        """Soft delete a record by primary key."""
+        """Marca un registro como inactivo en lugar de eliminarlo físicamente."""
         with self.session_scope() as session:
             model = session.get(self.model, id_key)
             if model is None:

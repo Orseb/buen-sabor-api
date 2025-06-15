@@ -7,6 +7,8 @@ from src.schemas.country import (
 
 
 class CountryRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de países."""
+
     def __init__(self):
         super().__init__(
             model=CountryModel,

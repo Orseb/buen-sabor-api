@@ -7,6 +7,8 @@ from src.schemas.order_inventory_detail import (
 
 
 class OrderInventoryDetailRepository(BaseRepositoryImplementation):
+    """Repositorio para manejar los detalles de inventario de pedidos."""
+
     def __init__(self):
         super().__init__(
             model=OrderInventoryDetailModel,

@@ -11,9 +11,13 @@ from src.repositories.base_implementation import BaseRepositoryImplementation
 from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
+from src.schemas.order_detail import CreateOrderDetailSchema
+from src.schemas.order_inventory_detail import CreateOrderInventoryDetailSchema
 
 
 class OrderRepository(BaseRepositoryImplementation):
+    """Repositorio para manejo de pedidos."""
+
     def __init__(self):
         super().__init__(
             model=OrderModel,
@@ -24,9 +28,12 @@ class OrderRepository(BaseRepositoryImplementation):
         self.inventory_item_repository = InventoryItemRepository()
 
     def save_with_details(
-        self, order_model, details, inventory_details
+        self,
+        order_model: OrderModel,
+        details: List[CreateOrderDetailSchema],
+        inventory_details: List[CreateOrderInventoryDetailSchema],
     ) -> ResponseOrderSchema:
-        """Save an order along with its details."""
+        """Guarda un pedido con sus detalles y detalles de inventario."""
         with self.session_scope() as session:
             session.add(order_model)
             session.flush()
@@ -49,6 +56,7 @@ class OrderRepository(BaseRepositoryImplementation):
             return self.schema.model_validate(order_model)
 
     def count_all_by_user(self, user_id: int, status: OrderStatus | None) -> int:
+        """Cuenta todos los pedidos de un usuario, opcionalmente filtrando por estado."""
         with self.session_scope() as session:
             if status:
                 return (
@@ -64,6 +72,7 @@ class OrderRepository(BaseRepositoryImplementation):
     def find_by_user(
         self, user_id: int, status: OrderStatus | None, offset: int, limit: int
     ) -> List[ResponseOrderSchema]:
+        """Obtiene los pedidos de un usuario, opcionalmente filtrando por estado."""
         with self.session_scope() as session:
             if status:
                 models = (
@@ -88,7 +97,7 @@ class OrderRepository(BaseRepositoryImplementation):
     def get_top_customers(
         self, start_date: datetime, end_date: datetime, limit: int = 10
     ) -> List[Dict[str, Any]]:
-
+        """Obtiene los clientes con más pedidos en un rango de fechas."""
         with self.session_scope() as session:
             results = (
                 session.query(
