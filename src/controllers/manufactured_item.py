@@ -19,6 +19,13 @@ class ManufacturedItemController(BaseControllerImplementation):
             tags=["Manufactured Item"],
         )
 
+        @self.router.get("/products/all", response_model=PaginatedResponseSchema)
+        def get_public_products(
+            offset: int = 0, limit: int = 10
+        ) -> PaginatedResponseSchema:
+            """Endpoint publico para productos."""
+            return self.service.get_all(offset, limit)
+
         @self.router.get(
             "/products/{id_key}",
             response_model=ResponseManufacturedItemWithAvailabilitySchema,
@@ -28,10 +35,3 @@ class ManufacturedItemController(BaseControllerImplementation):
         ) -> ResponseManufacturedItemWithAvailabilitySchema:
             """Endpoint publico para un producto por ID."""
             return self.service.get_one(id_key)
-
-        @self.router.get("/products/all", response_model=PaginatedResponseSchema)
-        def get_public_products(
-            offset: int = 0, limit: int = 10
-        ) -> PaginatedResponseSchema:
-            """Endpoint publico para productos."""
-            return self.service.get_all(offset, limit)
