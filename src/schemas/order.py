@@ -38,4 +38,5 @@ class ResponseOrderSchema(BaseOrderSchema):
     address: Optional[ResponseAddressSchema] = None
     details: List[ResponseOrderDetailSchema] = []
     inventory_details: List[ResponseOrderInventoryDetailSchema] = []
+    invoice_id: Optional[int] = None
     id_key: int

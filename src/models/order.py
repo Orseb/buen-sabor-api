@@ -69,3 +69,7 @@ class OrderModel(BaseModel):
         "OrderInventoryDetailModel", back_populates="order"
     )
     invoice = relationship("InvoiceModel", back_populates="order", uselist=False)
+
+    @property
+    def invoice_id(self):
+        return self.invoice.id_key if self.invoice else None
