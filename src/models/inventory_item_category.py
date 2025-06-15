@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Integer, String
+from sqlalchemy import Boolean, Column, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 
 from src.models.base import BaseModel
@@ -9,6 +9,7 @@ class InventoryItemCategoryModel(BaseModel):
 
     name = Column(String, nullable=False)
     description = Column(String)
+    public = Column(Boolean)
 
     parent_id = Column(
         Integer,

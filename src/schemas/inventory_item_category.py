@@ -7,6 +7,7 @@ class BaseInventoryItemCategorySchema(BaseSchema):
     name: str
     description: str = None
     active: bool = True
+    public: Optional[bool] = False
     parent_id: Optional[int] = None
 
 
@@ -17,6 +18,3 @@ class CreateInventoryItemCategorySchema(BaseInventoryItemCategorySchema):
 class ResponseInventoryItemCategorySchema(CreateInventoryItemCategorySchema):
     id_key: int
     subcategories: List["ResponseInventoryItemCategorySchema"] = []
-
-
-ResponseInventoryItemCategorySchema.model_rebuild()
