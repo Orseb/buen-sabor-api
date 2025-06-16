@@ -1,4 +1,4 @@
-from typing import Any, Dict, Generic, Optional, Type, TypeVar, Union, cast
+from typing import Any, Generic, Optional, Type, TypeVar, cast
 
 from src.models.base import BaseModel
 from src.repositories.base import BaseRepository
@@ -72,13 +72,9 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
         model_instance = self.to_model(schema)
         return self.repository.save(model_instance)
 
-    def update(self, id_key: int, schema_or_dict: Union[Any, Dict[str, Any]]) -> S:
+    def update(self, id_key: int, schema: Any) -> S:
         """Actualiza un registro existente"""
-        if isinstance(schema_or_dict, dict):
-            changes = schema_or_dict
-        else:
-            changes = schema_or_dict.model_dump(exclude_unset=True)
-
+        changes = schema.model_dump(exclude_unset=True)
         return self.repository.update(id_key, changes)
 
     def delete(self, id_key: int) -> S:

@@ -1,5 +1,3 @@
-from typing import Any
-
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
 from src.repositories.inventory_item_category import InventoryItemCategoryRepository
 from src.repositories.manufactured_item_category import (
@@ -39,29 +37,28 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
     def update(
         self,
         id_key: int,
-        schema_or_dict: CreateManufacturedItemCategorySchema | dict[str, Any],
+        schema: CreateManufacturedItemCategorySchema,
     ) -> ResponseManufacturedItemCategorySchema:
         """Actualiza una categoría de productos, verificando las reglas de jerarquía."""
         current_category = self.repository.find(id_key)
         if (
             hasattr(current_category, "subcategories")
             and current_category.subcategories
-            and getattr(schema_or_dict, "parent_id", None)
+            and schema.parent_id
         ):
             raise ValueError(
                 "Las categorías con subcategorías no pueden convertirse en subcategorias."
             )
 
-        parent_id = getattr(schema_or_dict, "parent_id", None)
-        if parent_id:
-            if parent_id == id_key:
+        if schema.parent_id:
+            if schema.parent_id == id_key:
                 raise ValueError("Una categoría no puede ser su propio padre.")
 
-            parent = self.repository.find(parent_id)
+            parent = self.repository.find(schema.parent_id)
             if parent.parent_id:
                 raise ValueError("Las subcategorías no pueden tener subcategorías.")
 
-        return super().update(id_key, schema_or_dict)
+        return super().update(id_key, schema)
 
     def get_top_level_categories(
         self, offset: int, limit: int
