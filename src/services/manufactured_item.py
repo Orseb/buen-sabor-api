@@ -91,16 +91,13 @@ class ManufacturedItemService(BaseServiceImplementation):
 
         return self.repository.remove(id_key)
 
+    @staticmethod
     def _check_item_availability(
-        self, manufactured_item: ResponseManufacturedItemSchema
+        manufactured_item: ResponseManufacturedItemSchema,
     ) -> bool:
         """Verifica si un item manufacturado tiene suficiente stock para elaborarse."""
         for detail in manufactured_item.details:
-            inventory_item = self.inventory_item_repository.find(
-                detail.inventory_item.id_key
-            )
-
-            if inventory_item.current_stock < detail.quantity:
+            if detail.inventory_item.current_stock < detail.quantity:
                 return False
 
         return True

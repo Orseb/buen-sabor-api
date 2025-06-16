@@ -27,3 +27,7 @@ class ResponsePromotionSchema(BasePromotionSchema):
     id_key: int
     manufactured_item_details: List[ResponsePromotionManufacturedItemDetailSchema] = []
     inventory_item_details: List[ResponsePromotionInventoryItemDetailSchema] = []
+
+
+class ResponsePromotionWithAvailabilitySchema(ResponsePromotionSchema):
+    is_available: bool

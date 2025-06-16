@@ -54,7 +54,7 @@ def get_current_user(
     return {"id": user_id, "email": user_email, "role": user_role}
 
 
-def has_role(allowed_roles: Union[List[UserRole], UserRole]):
+def has_role(allowed_roles: Union[List[UserRole], UserRole]) -> Any:
     """Decorador para verificar si el usuario tiene uno de los roles permitidos."""
     if isinstance(allowed_roles, UserRole):
         allowed_roles = [allowed_roles]

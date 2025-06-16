@@ -1,7 +1,13 @@
 from src.models.promotion import PromotionModel
 from src.repositories.promotion import PromotionRepository
-from src.schemas.promotion import CreatePromotionSchema, ResponsePromotionSchema
+from src.schemas.pagination import PaginatedResponseSchema
+from src.schemas.promotion import (
+    CreatePromotionSchema,
+    ResponsePromotionSchema,
+    ResponsePromotionWithAvailabilitySchema,
+)
 from src.services.base_implementation import BaseServiceImplementation
+from src.services.manufactured_item import ManufacturedItemService
 
 
 class PromotionService(BaseServiceImplementation):
@@ -13,6 +19,27 @@ class PromotionService(BaseServiceImplementation):
             model=PromotionModel,
             create_schema=CreatePromotionSchema,
             response_schema=ResponsePromotionSchema,
+        )
+        self.manufactured_item_service = ManufacturedItemService()
+
+    def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
+        """Obtiene todas las promociones con su disponibilidad."""
+        paginated_result = super().get_all(offset, limit)
+
+        promotions_with_availability = []
+        for promotion in paginated_result.items:
+            is_available = self.check_promotion_availability(promotion)
+            promotion_dict = promotion.model_dump()
+            promotion_dict["is_available"] = is_available
+            promotions_with_availability.append(
+                ResponsePromotionWithAvailabilitySchema(**promotion_dict)
+            )
+
+        return PaginatedResponseSchema(
+            total=paginated_result.total,
+            offset=paginated_result.offset,
+            limit=paginated_result.limit,
+            items=promotions_with_availability,
         )
 
     def save(self, schema: CreatePromotionSchema) -> ResponsePromotionSchema:
@@ -44,6 +71,24 @@ class PromotionService(BaseServiceImplementation):
         return self.repository.update_with_details(
             id_key, schema, manufactured_item_details, inventory_item_details
         )
+
+    @staticmethod
+    def check_promotion_availability(promotion: ResponsePromotionSchema) -> bool:
+        """Verifica si una promoción tiene disponibilidad."""
+        for manufactured_detail in promotion.manufactured_item_details:
+            for detail in manufactured_detail.manufactured_item.details:
+                if detail.inventory_item.current_stock < (
+                    detail.quantity * manufactured_detail.quantity
+                ):
+                    return False
+
+        for inventory_detail in promotion.inventory_item_details:
+            if (
+                inventory_detail.inventory_item.current_stock
+                < inventory_detail.quantity
+            ):
+                return False
+        return True
 
     def _validate_non_ingredient_items(self, inventory_item_details: list) -> None:
         """Valida que los items de inventario no sean ingredientes."""
