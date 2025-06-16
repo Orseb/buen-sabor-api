@@ -158,22 +158,4 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
 
     def _restore_inventory_stock(self, order: ResponseOrderSchema) -> None:
         """Restaura el stock de inventario basado en los detalles del pedido."""
-        for detail in order.details:
-            for manufactured_item_detail in detail.manufactured_item.details:
-                quantity_to_add = manufactured_item_detail.quantity * detail.quantity
-                new_stock = (
-                    manufactured_item_detail.inventory_item.current_stock
-                    + quantity_to_add
-                )
-
-                self.inventory_item_repository.update(
-                    manufactured_item_detail.inventory_item.id_key,
-                    {"current_stock": new_stock},
-                )
-
-        for detail in order.inventory_details:
-            new_stock = detail.inventory_item.current_stock + detail.quantity
-
-            self.inventory_item_repository.update(
-                detail.inventory_item.id_key, {"current_stock": new_stock}
-            )
+        self.inventory_item_repository.restore_inventory_stock(order)
