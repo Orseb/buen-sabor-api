@@ -20,6 +20,8 @@ class PromotionService(BaseServiceImplementation):
         manufactured_item_details = schema.manufactured_item_details
         inventory_item_details = schema.inventory_item_details
 
+        self._validate_non_ingredient_items(inventory_item_details)
+
         schema_dict = schema.model_dump()
         schema_dict.pop("manufactured_item_details", None)
         schema_dict.pop("inventory_item_details", None)
@@ -37,6 +39,19 @@ class PromotionService(BaseServiceImplementation):
         manufactured_item_details = schema.manufactured_item_details
         inventory_item_details = schema.inventory_item_details
 
+        self._validate_non_ingredient_items(inventory_item_details)
+
         return self.repository.update_with_details(
             id_key, schema, manufactured_item_details, inventory_item_details
         )
+
+    def _validate_non_ingredient_items(self, inventory_item_details: list) -> None:
+        """Valida que los items de inventario no sean ingredientes."""
+        for inventory_item_detail in inventory_item_details:
+            inventory_item = self.repository.find(
+                inventory_item_detail.inventory_item_id
+            )
+            if inventory_item.is_ingredient:
+                raise ValueError(
+                    "No se pueden agregar ingredientes como items de inventario en una promoción."
+                )

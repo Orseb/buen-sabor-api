@@ -42,10 +42,14 @@ class OrderController(
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> ResponseOrderSchema:
             """Genera un nuevo pedido."""
-            if not order.details and not order.inventory_details:
+            if (
+                not order.details
+                and not order.inventory_details
+                and not order.promotion_details
+            ):
                 raise HTTPException(
                     status_code=400,
-                    detail="El pedido debe tener al menos un detalle o un item de inventario.",
+                    detail="El pedido debe tener al menos un detalle, un insumo o una promoción.",
                 )
 
             for detail in order.inventory_details:

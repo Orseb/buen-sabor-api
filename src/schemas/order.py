@@ -9,6 +9,7 @@ from src.schemas.order_inventory_detail import (
     CreateOrderInventoryDetailSchema,
     ResponseOrderInventoryDetailSchema,
 )
+from src.schemas.order_promotion_detail import CreateOrderPromotionDetailSchema
 from src.schemas.user import ResponseUserSchema
 
 
@@ -23,6 +24,7 @@ class CreateOrderSchema(BaseOrderSchema):
     address_id: Optional[int] = None
     details: List[CreateOrderDetailSchema] = []
     inventory_details: List[CreateOrderInventoryDetailSchema] = []
+    promotion_details: List[CreateOrderPromotionDetailSchema] = []
 
 
 class ResponseOrderSchema(BaseOrderSchema):

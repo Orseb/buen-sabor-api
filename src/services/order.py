@@ -7,10 +7,12 @@ from src.repositories.manufactured_item import ManufacturedItemRepository
 from src.repositories.order import OrderRepository
 from src.repositories.order_detail import OrderDetailRepository
 from src.repositories.order_inventory_detail import OrderInventoryDetailRepository
+from src.repositories.promotion import PromotionRepository
 from src.repositories.user import UserRepository
 from src.schemas.order import CreateOrderSchema, ResponseOrderSchema
 from src.schemas.order_detail import CreateOrderDetailSchema
 from src.schemas.order_inventory_detail import CreateOrderInventoryDetailSchema
+from src.schemas.order_promotion_detail import CreateOrderPromotionDetailSchema
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.services.invoice import InvoiceService
@@ -32,12 +34,20 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         self.order_inventory_detail_repository = OrderInventoryDetailRepository()
         self.inventory_item_repository = InventoryItemRepository()
         self.manufactured_item_repository = ManufacturedItemRepository()
+        self.promotion_repository = PromotionRepository()
         self.user_repository = UserRepository()
 
     def save(self, schema: CreateOrderSchema) -> ResponseOrderSchema:
         """Guarda un nuevo pedido con sus detalles y calcula totales."""
-        details = self._process_details(schema.details)
-        inventory_details = self._process_inventory_details(schema.inventory_details)
+        expanded_details, expanded_inventory_details = self._expand_promotions(
+            schema.promotion_details
+        )
+
+        all_details = schema.details + expanded_details
+        all_inventory_details = schema.inventory_details + expanded_inventory_details
+
+        details = self._process_details(all_details)
+        inventory_details = self._process_inventory_details(all_inventory_details)
 
         schema_dict = schema.model_dump()
         schema_dict.update(
@@ -45,20 +55,96 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         )
         schema_dict.pop("details", None)
         schema_dict.pop("inventory_details", None)
+        schema_dict.pop("promotion_details", None)
 
         return self.repository.save_with_details(
             OrderModel(**schema_dict), details, inventory_details
         )
+
+    def _expand_promotions(
+        self, promotion_details: List[CreateOrderPromotionDetailSchema]
+    ) -> tuple[List[CreateOrderDetailSchema], List[CreateOrderInventoryDetailSchema]]:
+        """Expande las promociones en detalles regulares de pedido."""
+        expanded_details = []
+        expanded_inventory_details = []
+
+        for promotion_detail in promotion_details:
+            promotion = self.promotion_repository.find(promotion_detail.promotion_id)
+            discount_multiplier = 1 - (promotion.discount_percentage / 100)
+
+            for manufactured_detail in promotion.manufactured_item_details:
+                original_price = manufactured_detail.manufactured_item.price
+                discounted_price = original_price * discount_multiplier
+                total_quantity = (
+                    manufactured_detail.quantity * promotion_detail.quantity
+                )
+
+                existing_detail = next(
+                    (
+                        detail
+                        for detail in expanded_details
+                        if detail.manufactured_item_id
+                        == manufactured_detail.manufactured_item.id_key
+                    ),
+                    None,
+                )
+
+                if existing_detail:
+                    existing_detail.quantity += total_quantity
+                    existing_detail.subtotal = (
+                        existing_detail.unit_price * existing_detail.quantity
+                    )
+                else:
+                    expanded_detail = CreateOrderDetailSchema(
+                        manufactured_item_id=manufactured_detail.manufactured_item.id_key,
+                        quantity=total_quantity,
+                        unit_price=discounted_price,
+                        subtotal=discounted_price * total_quantity,
+                    )
+                    expanded_details.append(expanded_detail)
+
+            for inventory_detail in promotion.inventory_item_details:
+                original_price = inventory_detail.inventory_item.price
+                discounted_price = original_price * discount_multiplier
+                total_quantity = inventory_detail.quantity * promotion_detail.quantity
+
+                existing_detail = next(
+                    (
+                        detail
+                        for detail in expanded_inventory_details
+                        if detail.inventory_item_id
+                        == inventory_detail.inventory_item.id_key
+                    ),
+                    None,
+                )
+
+                if existing_detail:
+                    existing_detail.quantity += total_quantity
+                    existing_detail.subtotal = (
+                        existing_detail.unit_price * existing_detail.quantity
+                    )
+                else:
+                    expanded_inventory_detail = CreateOrderInventoryDetailSchema(
+                        inventory_item_id=inventory_detail.inventory_item.id_key,
+                        quantity=total_quantity,
+                        unit_price=discounted_price,
+                        subtotal=discounted_price * total_quantity,
+                    )
+                    expanded_inventory_details.append(expanded_inventory_detail)
+
+        return expanded_details, expanded_inventory_details
 
     def _process_details(
         self, details: List[CreateOrderDetailSchema]
     ) -> List[CreateOrderDetailSchema]:
         """Procesa los detalles de los items manufacturados y actualiza el stock."""
         for detail in details:
-            detail.unit_price = self.manufactured_item_repository.find(
-                detail.manufactured_item_id
-            ).price
-            detail.subtotal = detail.unit_price * detail.quantity
+            if detail.unit_price is None:
+                detail.unit_price = self.manufactured_item_repository.find(
+                    detail.manufactured_item_id
+                ).price
+            if detail.subtotal is None:
+                detail.subtotal = detail.unit_price * detail.quantity
             self._update_detail_stock(detail)
 
         return details
@@ -68,10 +154,12 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
     ) -> List[CreateOrderInventoryDetailSchema]:
         """Procesa los detalles de inventario y actualiza el stock."""
         for detail in inventory_details:
-            detail.unit_price = self.inventory_item_repository.find(
-                detail.inventory_item_id
-            ).price
-            detail.subtotal = detail.unit_price * detail.quantity
+            if detail.unit_price is None:
+                detail.unit_price = self.inventory_item_repository.find(
+                    detail.inventory_item_id
+                ).price
+            if detail.subtotal is None:
+                detail.subtotal = detail.unit_price * detail.quantity
             self._update_inventory_detail_stock(detail)
 
         return inventory_details
