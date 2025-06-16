@@ -1,10 +1,16 @@
+from typing import Any, Dict
+
+from fastapi import Depends
+
 from src.controllers.base_implementation import BaseControllerImplementation
+from src.models.user import UserRole
 from src.schemas.manufactured_item_category import (
     CreateManufacturedItemCategorySchema,
     ResponseManufacturedItemCategorySchema,
 )
 from src.schemas.pagination import PaginatedResponseSchema
 from src.services.manufactured_item_category import ManufacturedItemCategoryService
+from src.utils.rbac import has_role
 
 
 class ManufacturedItemCategoryController(BaseControllerImplementation):
@@ -23,7 +29,11 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
             response_model=PaginatedResponseSchema,
         )
         async def get_top_level_categories(
-            offset: int = 0, limit: int = 10
+            offset: int = 0,
+            limit: int = 10,
+            _: Dict[str, Any] = Depends(
+                has_role([UserRole.cocinero, UserRole.administrador])
+            ),
         ) -> PaginatedResponseSchema:
             """Obtiene todas las categorías de artículos manufacturados de nivel superior."""
             return self.service.get_top_level_categories(offset, limit)
