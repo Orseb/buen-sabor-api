@@ -1,4 +1,5 @@
 from src.models.promotion import PromotionModel
+from src.repositories.inventory_item import InventoryItemRepository
 from src.repositories.promotion import PromotionRepository
 from src.schemas.pagination import PaginatedResponseSchema
 from src.schemas.promotion import (
@@ -21,6 +22,7 @@ class PromotionService(BaseServiceImplementation):
             response_schema=ResponsePromotionSchema,
         )
         self.manufactured_item_service = ManufacturedItemService()
+        self.inventory_item_repository = InventoryItemRepository()
 
     def get_all(self, offset: int = 0, limit: int = 10) -> PaginatedResponseSchema:
         """Obtiene todas las promociones con su disponibilidad."""
@@ -93,7 +95,7 @@ class PromotionService(BaseServiceImplementation):
     def _validate_non_ingredient_items(self, inventory_item_details: list) -> None:
         """Valida que los items de inventario no sean ingredientes."""
         for inventory_item_detail in inventory_item_details:
-            inventory_item = self.repository.find(
+            inventory_item = self.inventory_item_repository.find(
                 inventory_item_detail.inventory_item_id
             )
             if inventory_item.is_ingredient:
