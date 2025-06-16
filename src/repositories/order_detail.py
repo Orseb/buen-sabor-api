@@ -23,10 +23,10 @@ class OrderDetailRepository(BaseRepositoryImplementation):
             response_schema=ResponseOrderDetailSchema,
         )
 
-    def get_top_products(
+    def get_top_manufactured_products(
         self, start_date: datetime, end_date: datetime, limit: int = 10
     ) -> List[Dict[str, Any]]:
-        """Obtiene los productos más vendidos en un rango de fechas."""
+        """Obtiene los productos manufacturados más vendidos en un rango de fechas."""
         with self.session_scope() as session:
             results = (
                 session.query(
@@ -61,6 +61,7 @@ class OrderDetailRepository(BaseRepositoryImplementation):
                                 if manufactured_item.category
                                 else "Unknown"
                             ),
+                            "type": "manufactured_item",
                         }
                     )
 
