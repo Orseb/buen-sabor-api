@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends
 
 from src.models.user import UserRole
 from src.schemas.inventory_purchase import (
+    CreateInventoryPurchaseSchema,
     ResponseInventoryPurchaseSchema,
 )
 from src.services.inventory_purchase import InventoryPurchaseService
@@ -21,15 +22,8 @@ class InventoryPurchaseController:
         )
         async def add_stock(
             inventory_item_id: int,
-            quantity: float = Query(..., gt=0),
-            unit_cost: float = Query(..., gt=0),
-            notes: str = None,
+            purchase_data: CreateInventoryPurchaseSchema,
             _: dict = Depends(has_role([UserRole.administrador, UserRole.cocinero])),
         ) -> ResponseInventoryPurchaseSchema:
             """Agrega stock a un artículo de inventario y crea registro de compra."""
-            return self.service.add_stock(
-                inventory_item_id=inventory_item_id,
-                quantity=quantity,
-                unit_cost=unit_cost,
-                notes=notes,
-            )
+            return self.service.add_stock(inventory_item_id, purchase_data)

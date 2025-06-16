@@ -1,5 +1,4 @@
 from datetime import datetime
-from typing import Optional
 
 from src.models.inventory_purchase import InventoryPurchaseModel
 from src.repositories.inventory_item import InventoryItemRepository
@@ -26,25 +25,24 @@ class InventoryPurchaseService(BaseServiceImplementation):
     def add_stock(
         self,
         inventory_item_id: int,
-        quantity: float,
-        unit_cost: float,
-        notes: Optional[str] = None,
+        purchase_data: CreateInventoryPurchaseSchema,
     ) -> ResponseInventoryPurchaseSchema:
         """Agrega stock a un artículo de inventario."""
         inventory_item = self.inventory_item_repository.find(inventory_item_id)
 
-        purchase = CreateInventoryPurchaseSchema(
-            inventory_item_id=inventory_item_id,
-            quantity=quantity,
-            unit_cost=unit_cost,
-            total_cost=quantity * unit_cost,
-            notes=notes,
-            purchase_date=datetime.now(),
-        )
+        if purchase_data.purchase_date is None:
+            purchase_data.purchase_date = datetime.now()
 
-        new_stock = inventory_item.current_stock + quantity
+        new_stock = inventory_item.current_stock + purchase_data.quantity
         self.inventory_item_repository.update(
-            inventory_item_id, {"current_stock": new_stock, "purchase_cost": unit_cost}
+            inventory_item_id,
+            {"current_stock": new_stock, "purchase_cost": purchase_data.unit_cost},
         )
+        dict_purchase_data = purchase_data.model_dump(exclude_unset=True)
+        dict_purchase_data["inventory_item_id"] = inventory_item_id
+        dict_purchase_data["total_cost"] = (
+            purchase_data.quantity * purchase_data.unit_cost
+        )
+        model_purchase_data = self.model(**dict_purchase_data)
 
-        return self.save(purchase)
+        return self.repository.save(model_purchase_data)

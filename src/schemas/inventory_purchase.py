@@ -6,10 +6,8 @@ from src.schemas.inventory_item import ResponseInventoryItemSchema
 
 
 class BaseInventoryPurchaseSchema(BaseSchema):
-    inventory_item_id: int
     quantity: float
     unit_cost: float
-    total_cost: float
     notes: Optional[str] = None
     purchase_date: Optional[datetime] = None
 
@@ -20,5 +18,6 @@ class CreateInventoryPurchaseSchema(BaseInventoryPurchaseSchema):
 
 class ResponseInventoryPurchaseSchema(BaseInventoryPurchaseSchema):
     id_key: int
+    total_cost: float
     purchase_date: datetime
     inventory_item: ResponseInventoryItemSchema
