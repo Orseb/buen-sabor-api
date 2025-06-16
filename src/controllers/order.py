@@ -113,13 +113,24 @@ class OrderController(
 
         @self.router.get("/user/token", response_model=PaginatedResponseSchema)
         async def get_by_user(
+            user_id: int | None = None,
             status: OrderStatus | None = None,
             offset: int = 0,
             limit: int = 10,
             current_user: Dict[str, Any] = Depends(get_current_user),
         ) -> PaginatedResponseSchema:
-            """Se obtienen los pedidos del usuario autenticado."""
-            return self.service.get_by_user(current_user["id"], status, offset, limit)
+            """Se obtienen los pedidos del usuario autenticado o de otro usuario. por id"""
+            if not user_id:
+                return self.service.get_by_user(
+                    current_user["id"], status, offset, limit
+                )
+
+            if current_user["role"] != UserRole.administrador.value:
+                raise HTTPException(
+                    status_code=403,
+                    detail="Solo un administrador puede consultar pedidos de otros usuarios.",
+                )
+            return self.service.get_by_user(user_id, status, offset, limit)
 
         @self.router.put("/{id_key}/status", response_model=ResponseOrderSchema)
         async def update_status(
