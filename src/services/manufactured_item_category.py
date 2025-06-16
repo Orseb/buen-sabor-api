@@ -1,6 +1,7 @@
 from typing import Any
 
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
+from src.repositories.inventory_item_category import InventoryItemCategoryRepository
 from src.repositories.manufactured_item_category import (
     ManufacturedItemCategoryRepository,
 )
@@ -22,6 +23,7 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
             create_schema=CreateManufacturedItemCategorySchema,
             response_schema=ResponseManufacturedItemCategorySchema,
         )
+        self.inventory_item_category_repository = InventoryItemCategoryRepository()
 
     def save(
         self, schema: CreateManufacturedItemCategorySchema
@@ -70,3 +72,14 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
         )
+
+    def get_all_public_subcategories(self) -> dict:
+        """Obtiene todas las subcategorías de artículos manufacturados e inventario."""
+        manufactured_item_subcategories = self.repository.get_all_public_subcategories()
+        inventory_subcategories = (
+            self.inventory_item_category_repository.get_all_public_subcategories()
+        )
+        return {
+            "manufactured_item_categories": manufactured_item_subcategories,
+            "inventory_item_categories": inventory_subcategories,
+        }

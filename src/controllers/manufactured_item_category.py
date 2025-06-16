@@ -27,3 +27,8 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
         ) -> PaginatedResponseSchema:
             """Obtiene todas las categorías de artículos manufacturados de nivel superior."""
             return self.service.get_top_level_categories(offset, limit)
+
+        @self.router.get("/public-subcategories/all")
+        async def get_all_public_subcategories() -> dict:
+            """Obtiene todas las subcategorías de artículos manufacturados e inventario."""
+            return self.service.get_all_public_subcategories()

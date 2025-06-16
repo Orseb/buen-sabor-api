@@ -40,3 +40,18 @@ class InventoryItemCategoryRepository(BaseRepositoryImplementation):
                 .all()
             )
             return [self.schema.model_validate(category) for category in categories]
+
+    def get_all_public_subcategories(self) -> list[ResponseInventoryItemCategorySchema]:
+        """Obtiene todas las subcategorías de artículos de inventario."""
+        with self.session_scope() as session:
+            inventory_categories = (
+                session.query(self.model)
+                .filter(self.model.parent_id.is_not(None))
+                .filter(self.model.active.is_(True))
+                .filter(self.model.public.is_(True))
+                .all()
+            )
+            return [
+                self.schema.model_validate(category)
+                for category in inventory_categories
+            ]
