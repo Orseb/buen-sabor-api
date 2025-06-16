@@ -22,6 +22,13 @@ from src.models.measurement_unit import MeasurementUnitModel  # noqa
 from src.models.order import OrderModel  # noqa
 from src.models.order_detail import OrderDetailModel  # noqa
 from src.models.order_inventory_detail import OrderInventoryDetailModel  # noqa
+from src.models.promotion import PromotionModel  # noqa
+from src.models.promotion_inventory_item_detail import (  # noqa
+    PromotionInventoryItemDetailModel,
+)
+from src.models.promotion_manufactured_item_detail import (  # noqa
+    PromotionManufacturedItemDetailModel,
+)
 from src.models.province import ProvinceModel  # noqa
 from src.models.user import UserModel  # noqa
 

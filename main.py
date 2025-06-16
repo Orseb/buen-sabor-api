@@ -8,7 +8,6 @@ from src.config.settings import settings
 from src.controllers.address import AddressController
 from src.controllers.auth import AuthController
 from src.controllers.country import CountryController
-from src.controllers.health_check import HealthCheckController
 from src.controllers.inventory_item import InventoryItemController
 from src.controllers.inventory_item_category import InventoryItemCategoryController
 from src.controllers.inventory_purchase import InventoryPurchaseController
@@ -20,6 +19,7 @@ from src.controllers.manufactured_item_category import (
 )
 from src.controllers.measurement_unit import MeasurementUnitController
 from src.controllers.order import OrderController
+from src.controllers.promotion import PromotionController
 from src.controllers.province import ProvinceController
 from src.controllers.report import ReportController
 from src.controllers.user import UserController
@@ -59,7 +59,6 @@ app.add_exception_handler(ValueError, value_error_handler)
 app.add_exception_handler(IntegrityError, integrity_error_handler)
 app.add_exception_handler(Exception, global_exception_handler)
 
-app.include_router(HealthCheckController().router, prefix="/health_check")
 app.include_router(AuthController().router, prefix="/auth")
 app.include_router(CountryController().router, prefix="/country")
 app.include_router(ProvinceController().router, prefix="/province")
@@ -79,6 +78,7 @@ app.include_router(ManufacturedItemController().router, prefix="/manufactured_it
 app.include_router(OrderController().router, prefix="/order")
 app.include_router(InvoiceController().router, prefix="/invoice")
 app.include_router(ReportController().router, prefix="/reports")
+app.include_router(PromotionController().router, prefix="/promotion")
 
 
 @app.on_event("startup")
