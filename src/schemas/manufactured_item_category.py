@@ -7,11 +7,10 @@ class BaseManufacturedItemCategorySchema(BaseSchema):
     name: str
     description: str = None
     active: bool = True
-    parent_id: Optional[int] = None
 
 
 class CreateManufacturedItemCategorySchema(BaseManufacturedItemCategorySchema):
-    pass
+    parent_id: Optional[int] = None
 
 
 class ResponseManufacturedItemCategorySchema(CreateManufacturedItemCategorySchema):
@@ -19,4 +18,12 @@ class ResponseManufacturedItemCategorySchema(CreateManufacturedItemCategorySchem
     subcategories: List["ResponseManufacturedItemCategorySchema"] = []
 
 
-ResponseManufacturedItemCategorySchema.model_rebuild()
+class ResponseParentPublicManufacturedItemCategorySchema(
+    BaseManufacturedItemCategorySchema
+):
+    id_key: int
+
+
+class ResponsePublicManufacturedItemCategorySchema(BaseManufacturedItemCategorySchema):
+    id_key: int
+    parent: Optional["ResponseParentPublicManufacturedItemCategorySchema"] = None

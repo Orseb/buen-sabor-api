@@ -3,6 +3,7 @@ from src.repositories.base_implementation import BaseRepositoryImplementation
 from src.schemas.manufactured_item_category import (
     CreateManufacturedItemCategorySchema,
     ResponseManufacturedItemCategorySchema,
+    ResponsePublicManufacturedItemCategorySchema,
 )
 
 
@@ -43,7 +44,7 @@ class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
 
     def get_all_public_subcategories(
         self,
-    ) -> list[ResponseManufacturedItemCategorySchema]:
+    ) -> list[ResponsePublicManufacturedItemCategorySchema]:
         """Obtiene todas las subcategorías de artículos manufacturados."""
         with self.session_scope() as session:
             manufactured_categories = (
@@ -53,6 +54,6 @@ class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
                 .all()
             )
             return [
-                self.schema.model_validate(category)
+                ResponsePublicManufacturedItemCategorySchema.model_validate(category)
                 for category in manufactured_categories
             ]

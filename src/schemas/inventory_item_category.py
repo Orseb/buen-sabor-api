@@ -8,13 +8,21 @@ class BaseInventoryItemCategorySchema(BaseSchema):
     description: str = None
     active: bool = True
     public: Optional[bool] = False
-    parent_id: Optional[int] = None
 
 
 class CreateInventoryItemCategorySchema(BaseInventoryItemCategorySchema):
-    pass
+    parent_id: Optional[int] = None
 
 
 class ResponseInventoryItemCategorySchema(CreateInventoryItemCategorySchema):
     id_key: int
     subcategories: List["ResponseInventoryItemCategorySchema"] = []
+
+
+class ResponseParentPublicInventoryItemCategorySchema(BaseInventoryItemCategorySchema):
+    id_key: int
+
+
+class ResponsePublicInventoryItemCategorySchema(BaseInventoryItemCategorySchema):
+    id_key: int
+    parent: Optional["ResponseParentPublicInventoryItemCategorySchema"] = None

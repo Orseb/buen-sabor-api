@@ -3,6 +3,7 @@ from src.repositories.base_implementation import BaseRepositoryImplementation
 from src.schemas.inventory_item_category import (
     CreateInventoryItemCategorySchema,
     ResponseInventoryItemCategorySchema,
+    ResponsePublicInventoryItemCategorySchema,
 )
 
 
@@ -41,7 +42,9 @@ class InventoryItemCategoryRepository(BaseRepositoryImplementation):
             )
             return [self.schema.model_validate(category) for category in categories]
 
-    def get_all_public_subcategories(self) -> list[ResponseInventoryItemCategorySchema]:
+    def get_all_public_subcategories(
+        self,
+    ) -> list[ResponsePublicInventoryItemCategorySchema]:
         """Obtiene todas las subcategorías de artículos de inventario."""
         with self.session_scope() as session:
             inventory_categories = (
@@ -52,6 +55,6 @@ class InventoryItemCategoryRepository(BaseRepositoryImplementation):
                 .all()
             )
             return [
-                self.schema.model_validate(category)
+                ResponsePublicInventoryItemCategorySchema.model_validate(category)
                 for category in inventory_categories
             ]
