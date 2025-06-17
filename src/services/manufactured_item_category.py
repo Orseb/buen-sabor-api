@@ -1,3 +1,5 @@
+from typing import Dict
+
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
 from src.repositories.inventory_item_category import InventoryItemCategoryRepository
 from src.repositories.manufactured_item_category import (
@@ -70,7 +72,7 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
             total=total, offset=offset, limit=limit, items=items
         )
 
-    def get_all_public_subcategories(self) -> dict:
+    def get_all_public_subcategories(self) -> Dict[str, list]:
         """Obtiene todas las subcategorías de artículos manufacturados e inventario."""
         manufactured_item_subcategories = self.repository.get_all_public_subcategories()
         inventory_subcategories = (

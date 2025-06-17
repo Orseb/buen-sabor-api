@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 
 from src.config.settings import settings
 from src.models.order import DeliveryMethod, OrderModel, OrderStatus
@@ -207,7 +207,7 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         delivery_method: DeliveryMethod,
         details: List[CreateOrderDetailSchema],
         inventory_details: List[CreateOrderInventoryDetailSchema],
-    ) -> dict:
+    ) -> Dict[str, float]:
         """Calcula el total, descuento y tiempo estimado del pedido."""
         total = sum(detail.subtotal for detail in details) + sum(
             inventory_detail.subtotal for inventory_detail in inventory_details

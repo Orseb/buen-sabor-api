@@ -39,6 +39,6 @@ class ManufacturedItemCategoryController(BaseControllerImplementation):
             return self.service.get_top_level_categories(offset, limit)
 
         @self.router.get("/public-subcategories/all")
-        async def get_all_public_subcategories() -> dict:
+        async def get_all_public_subcategories() -> Dict[str, list]:
             """Obtiene todas las subcategorías de artículos manufacturados e inventario."""
             return self.service.get_all_public_subcategories()
