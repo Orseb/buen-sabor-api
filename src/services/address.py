@@ -24,7 +24,7 @@ class AddressService(BaseServiceImplementation):
     ) -> ResponseAddressSchema:
         """Actualiza una dirección de un usuario específico"""
         self.validate_address_ownership(address_id, user_id)
-        return self.repository.update(address_id, address)
+        return self.update(address_id, address)
 
     def delete_user_address(self, user_id: int, address_id: int) -> BaseSchema:
         """Elimina una dirección de un usuario específico"""
