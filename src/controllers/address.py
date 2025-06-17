@@ -42,6 +42,7 @@ class AddressController:
             current_user: dict = Depends(get_current_user),
         ) -> ResponseAddressSchema:
             """Actualiza una dirección del usuario actual"""
+            address.user_id = current_user["id"]
             return self.service.update_user_address(
                 current_user["id"], address_id, address
             )
