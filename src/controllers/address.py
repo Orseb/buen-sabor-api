@@ -30,7 +30,8 @@ class AddressController:
             address: CreateAddressSchema, current_user: dict = Depends(get_current_user)
         ) -> ResponseAddressSchema:
             """Crea una nueva dirección para el usuario actual"""
-            return self.service.create_user_address(current_user["id"], address)
+            address.user_id = current_user["id"]
+            return self.service.save(address)
 
         @self.router.put(
             "/user/addresses/{address_id}", response_model=ResponseAddressSchema

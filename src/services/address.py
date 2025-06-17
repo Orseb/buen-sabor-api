@@ -19,13 +19,6 @@ class AddressService(BaseServiceImplementation):
             response_schema=ResponseAddressSchema,
         )
 
-    def create_user_address(
-        self, user_id: int, address: CreateAddressSchema
-    ) -> ResponseAddressSchema:
-        """Crea una dirección para un usuario específico"""
-        address.user_id = user_id
-        return self.repository.save(address)
-
     def update_user_address(
         self, user_id: int, address_id: int, address: CreateAddressSchema
     ) -> ResponseAddressSchema:
