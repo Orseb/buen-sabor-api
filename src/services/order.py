@@ -90,7 +90,16 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
                 )
 
                 if existing_detail:
-                    existing_detail.quantity += total_quantity
+                    current_total_value = (
+                        existing_detail.unit_price * existing_detail.quantity
+                    )
+                    new_total_value = discounted_price * total_quantity
+                    combined_quantity = existing_detail.quantity + total_quantity
+
+                    existing_detail.unit_price = (
+                        current_total_value + new_total_value
+                    ) / combined_quantity
+                    existing_detail.quantity = combined_quantity
                     existing_detail.subtotal = (
                         existing_detail.unit_price * existing_detail.quantity
                     )
@@ -119,7 +128,16 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
                 )
 
                 if existing_detail:
-                    existing_detail.quantity += total_quantity
+                    current_total_value = (
+                        existing_detail.unit_price * existing_detail.quantity
+                    )
+                    new_total_value = discounted_price * total_quantity
+                    combined_quantity = existing_detail.quantity + total_quantity
+
+                    existing_detail.unit_price = (
+                        current_total_value + new_total_value
+                    ) / combined_quantity
+                    existing_detail.quantity = combined_quantity
                     existing_detail.subtotal = (
                         existing_detail.unit_price * existing_detail.quantity
                     )
