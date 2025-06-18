@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, select
 
 from src.models.invoice import InvoiceModel, InvoiceType
 from src.models.invoice_detail import InvoiceDetailModel
@@ -44,28 +44,20 @@ class InvoiceRepository(BaseRepositoryImplementation):
     ) -> Dict[str, float]:
         """Obtiene los ingresos totales y el número de facturas en un rango de fechas."""
         with self.session_scope() as session:
-            revenue_results = (
-                session.query(func.sum(InvoiceModel.total).label("total_revenue"))
-                .filter(
-                    InvoiceModel.date >= start_date if start_date else True,
-                    InvoiceModel.date <= end_date if end_date else True,
+            stmt = select(
+                func.coalesce(func.sum(InvoiceModel.total), 0).label("total_revenue"),
+                func.count(InvoiceModel.id_key).label("invoice_count"),
+            ).where(
+                and_(
+                    self._build_invoice_date_filter(start_date, end_date),
                     InvoiceModel.type == InvoiceType.factura,
                 )
-                .first()
             )
 
-            invoice_count_results = (
-                session.query(func.count(InvoiceModel.id_key).label("invoice_count"))
-                .filter(
-                    InvoiceModel.date >= start_date if start_date else True,
-                    InvoiceModel.date <= end_date if end_date else True,
-                    InvoiceModel.type == InvoiceType.factura,
-                )
-                .first()
-            )
+            result = session.execute(stmt).first()
             return {
-                "total_revenue": revenue_results.total_revenue or 0,
-                "invoice_count": invoice_count_results.invoice_count or 0,
+                "total_revenue": result.total_revenue,
+                "invoice_count": result.invoice_count,
             }
 
     def get_invoices_report_data(
@@ -73,16 +65,26 @@ class InvoiceRepository(BaseRepositoryImplementation):
     ) -> List[Tuple[datetime, float, str]]:
         """Obtiene los detalles de las facturas en un rango de fechas para Excel."""
         with self.session_scope() as session:
-            return (
-                session.query(
-                    InvoiceModel.date,
-                    InvoiceModel.total,
-                    InvoiceModel.type,
+            stmt = (
+                select(InvoiceModel.date, InvoiceModel.total, InvoiceModel.type)
+                .where(
+                    and_(
+                        self._build_invoice_date_filter(start_date, end_date),
+                        InvoiceModel.type == InvoiceType.factura,
+                    )
                 )
-                .filter(
-                    InvoiceModel.date >= start_date if start_date else True,
-                    InvoiceModel.date <= end_date if end_date else True,
-                    InvoiceModel.type == InvoiceType.factura,
-                )
-                .all()
+                .order_by(InvoiceModel.date.desc())
             )
+
+            result = session.execute(stmt)
+            return result.all()
+
+    def _build_invoice_date_filter(self, start_date: datetime, end_date: datetime):
+        """Construye un filtro para las fechas de las facturas."""
+        conditions = []
+        if start_date:
+            conditions.append(InvoiceModel.date >= start_date)
+        if end_date:
+            conditions.append(InvoiceModel.date <= end_date)
+
+        return and_(*conditions) if conditions else True

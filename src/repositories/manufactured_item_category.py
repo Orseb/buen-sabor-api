@@ -1,3 +1,5 @@
+from sqlalchemy import func, select
+
 from src.models.manufactured_item_category import ManufacturedItemCategoryModel
 from src.repositories.base_implementation import BaseRepositoryImplementation
 from src.schemas.manufactured_item_category import (
@@ -20,40 +22,39 @@ class ManufacturedItemCategoryRepository(BaseRepositoryImplementation):
     def count_all_top_level(self) -> int:
         """Cuenta todas las categorías de nivel superior activas."""
         with self.session_scope() as session:
-            return (
-                session.query(self.model)
-                .filter(self.model.parent_id.is_(None))
-                .filter(self.model.active.is_(True))
-                .count()
+            stmt = select(func.count()).where(
+                self.model.parent_id.is_(None), self.model.active.is_(True)
             )
+            return session.scalar(stmt)
 
     def get_top_level_categories(
         self, offset: int, limit: int
     ) -> list[ResponseManufacturedItemCategorySchema]:
         """Obtiene todas las categorías de nivel superior activas con paginación."""
         with self.session_scope() as session:
-            categories = (
-                session.query(self.model)
-                .filter(self.model.parent_id.is_(None))
-                .filter(self.model.active.is_(True))
+            stmt = (
+                select(self.model)
+                .where(self.model.parent_id.is_(None), self.model.active.is_(True))
                 .offset(offset)
                 .limit(limit)
-                .all()
             )
-            return [self.schema.model_validate(category) for category in categories]
+
+            result = session.execute(stmt)
+            return [
+                self.schema.model_validate(category) for category in result.scalars()
+            ]
 
     def get_all_public_subcategories(
         self,
     ) -> list[ResponsePublicManufacturedItemCategorySchema]:
-        """Obtiene todas las subcategorías de artículos manufacturados."""
+        """Obtiene todas las subcategorías de artículos de inventario."""
         with self.session_scope() as session:
-            manufactured_categories = (
-                session.query(self.model)
-                .filter(self.model.parent_id.is_not(None))
-                .filter(self.model.active.is_(True))
-                .all()
+            stmt = select(self.model).where(
+                self.model.parent_id.is_not(None), self.model.active.is_(True)
             )
+
+            result = session.execute(stmt)
             return [
                 ResponsePublicManufacturedItemCategorySchema.model_validate(category)
-                for category in manufactured_categories
+                for category in result.scalars()
             ]

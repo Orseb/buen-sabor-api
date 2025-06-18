@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
-from sqlalchemy import desc, func
+from sqlalchemy import desc, func, select
 
 from src.models.order import OrderModel, OrderStatus
 from src.models.order_detail import OrderDetailModel
@@ -57,42 +57,31 @@ class OrderRepository(BaseRepositoryImplementation):
 
     def count_all_by_user(self, user_id: int, status: OrderStatus | None) -> int:
         """Cuenta todos los pedidos de un usuario, opcionalmente filtrando por estado."""
-        with self.session_scope() as session:
-            if status:
-                return (
-                    session.query(self.model)
-                    .filter(self.model.user_id == user_id, self.model.status == status)
-                    .count()
-                )
+        stmt = select(func.count()).where(self.model.user_id == user_id)
+        if status:
+            stmt = stmt.where(self.model.status == status)
 
-            return (
-                session.query(self.model).filter(self.model.user_id == user_id).count()
-            )
+        with self.session_scope() as session:
+            return session.scalar(stmt)
 
     def find_by_user(
         self, user_id: int, status: OrderStatus | None, offset: int, limit: int
     ) -> List[ResponseOrderSchema]:
         """Obtiene los pedidos de un usuario, opcionalmente filtrando por estado."""
+        stmt = (
+            select(self.model)
+            .where(self.model.user_id == user_id)
+            .order_by(desc(self.model.date))
+            .offset(offset)
+            .limit(limit)
+        )
+
+        if status:
+            stmt = stmt.where(self.model.status == status)
+
         with self.session_scope() as session:
-            if status:
-                models = (
-                    session.query(self.model)
-                    .filter(self.model.user_id == user_id, self.model.status == status)
-                    .order_by(desc(self.model.date))
-                    .offset(offset)
-                    .limit(limit)
-                    .all()
-                )
-            else:
-                models = (
-                    session.query(self.model)
-                    .filter(self.model.user_id == user_id)
-                    .order_by(desc(self.model.date))
-                    .offset(offset)
-                    .limit(limit)
-                    .all()
-                )
-            return [self.schema.model_validate(model) for model in models]
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
 
     def get_top_customers(
         self, start_date: datetime, end_date: datetime, limit: int = 10

@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Dict, List, Tuple
 
-from sqlalchemy import func
+from sqlalchemy import and_, func, select
+from sqlalchemy.orm import aliased
 
 from src.models.inventory_item import InventoryItemModel
 from src.models.inventory_purchase import InventoryPurchaseModel
@@ -27,47 +28,17 @@ class InventoryPurchaseRepository(BaseRepositoryImplementation):
     ) -> Dict[str, float]:
         """Obtiene los costos de compra en un rango de fechas."""
         with self.session_scope() as session:
-            purchase_costs_results = (
-                session.query(
-                    func.sum(InventoryPurchaseModel.total_cost).label("purchase_costs")
-                )
-                .filter(
-                    (
-                        InventoryPurchaseModel.purchase_date >= start_date
-                        if start_date
-                        else True
-                    ),
-                    (
-                        InventoryPurchaseModel.purchase_date <= end_date
-                        if end_date
-                        else True
-                    ),
-                )
-                .first()
-            )
+            stmt = select(
+                func.coalesce(func.sum(InventoryPurchaseModel.total_cost), 0).label(
+                    "purchase_costs"
+                ),
+                func.count(InventoryPurchaseModel.id_key).label("purchase_count"),
+            ).where(self._build_date_filter(start_date, end_date))
 
-            purchase_count_results = (
-                session.query(
-                    func.count(InventoryPurchaseModel.id_key).label("purchase_count")
-                )
-                .filter(
-                    (
-                        InventoryPurchaseModel.purchase_date >= start_date
-                        if start_date
-                        else True
-                    ),
-                    (
-                        InventoryPurchaseModel.purchase_date <= end_date
-                        if end_date
-                        else True
-                    ),
-                )
-                .first()
-            )
-
+            result = session.execute(stmt).first()
             return {
-                "purchase_costs": purchase_costs_results.purchase_costs or 0,
-                "purchase_count": purchase_count_results.purchase_count or 0,
+                "purchase_costs": result.purchase_costs,
+                "purchase_count": result.purchase_count,
             }
 
     def get_purchases_report_data(
@@ -75,25 +46,31 @@ class InventoryPurchaseRepository(BaseRepositoryImplementation):
     ) -> List[Tuple[datetime, int, float, str]]:
         """Obtiene los detalles de las compras de inventario en un rango de fechas para Excel."""
         with self.session_scope() as session:
-            return (
-                session.query(
-                    InventoryPurchaseModel.purchase_date,
-                    InventoryPurchaseModel.quantity,
-                    InventoryPurchaseModel.total_cost,
-                    InventoryItemModel.name,
+            Purchase = aliased(InventoryPurchaseModel)
+            Item = aliased(InventoryItemModel)
+
+            stmt = (
+                select(
+                    Purchase.purchase_date,
+                    Purchase.quantity,
+                    Purchase.total_cost,
+                    Item.name,
                 )
-                .join(InventoryItemModel)
-                .filter(
-                    (
-                        InventoryPurchaseModel.purchase_date >= start_date
-                        if start_date
-                        else True
-                    ),
-                    (
-                        InventoryPurchaseModel.purchase_date <= end_date
-                        if end_date
-                        else True
-                    ),
-                )
-                .all()
+                .distinct()
+                .select_from(Purchase)
+                .join(Item, Purchase.inventory_item_id == Item.id_key)
+                .where(self._build_date_filter(start_date, end_date))
             )
+
+            result = session.execute(stmt)
+            return result.all()
+
+    def _build_date_filter(self, start_date: datetime, end_date: datetime):
+        """Construye un filtro de fecha para las compras de inventario."""
+        conditions = []
+        if start_date:
+            conditions.append(InventoryPurchaseModel.purchase_date >= start_date)
+        if end_date:
+            conditions.append(InventoryPurchaseModel.purchase_date <= end_date)
+
+        return and_(*conditions) if conditions else True
