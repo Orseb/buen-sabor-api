@@ -250,6 +250,9 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         order_details: List[CreateOrderDetailSchema],
     ) -> float:
         """Calcula el tiempo estimado de preparación del pedido."""
+        if not order_details:
+            return 0.0
+
         items_prep_time = sum(
             self.manufactured_item_repository.find(
                 detail.manufactured_item_id
