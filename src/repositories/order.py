@@ -88,35 +88,35 @@ class OrderRepository(BaseRepositoryImplementation):
     ) -> List[Dict[str, Any]]:
         """Obtiene los clientes con más pedidos en un rango de fechas."""
         with self.session_scope() as session:
+            filters = [OrderModel.status == "entregado"]
+            if start_date:
+                filters.append(OrderModel.date >= start_date)
+            if end_date:
+                filters.append(OrderModel.date <= end_date)
+
             results = (
                 session.query(
-                    OrderModel.user_id,
+                    UserModel.id_key,
+                    UserModel.full_name,
+                    UserModel.email,
                     func.count(OrderModel.id_key).label("order_count"),
                     func.sum(OrderModel.final_total).label("total_amount"),
                 )
-                .filter(
-                    OrderModel.date >= start_date if start_date else True,
-                    OrderModel.date <= end_date if end_date else True,
-                    OrderModel.status == "entregado",
-                )
-                .group_by(OrderModel.user_id)
-                .order_by(desc("order_count"))
+                .join(OrderModel.user)
+                .filter(*filters)
+                .group_by(UserModel.id_key, UserModel.full_name, UserModel.email)
+                .order_by(desc(func.count(OrderModel.id_key)))
                 .limit(limit)
                 .all()
             )
 
-            top_customers = []
-            for result in results:
-                user = session.query(UserModel).get(result[0])
-                if user:
-                    top_customers.append(
-                        {
-                            "id": user.id_key,
-                            "name": user.full_name,
-                            "email": user.email,
-                            "order_count": result[1],
-                            "total_amount": result[2],
-                        }
-                    )
-
-            return top_customers
+            return [
+                {
+                    "id": r.id_key,
+                    "name": r.full_name,
+                    "email": r.email,
+                    "order_count": r.order_count,
+                    "total_amount": r.total_amount,
+                }
+                for r in results
+            ]
