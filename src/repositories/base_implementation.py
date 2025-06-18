@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 from typing import Any, Dict, Generic, Iterator, List, Optional, Type, TypeVar
 
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
 
 from src.config.database import Database
@@ -66,65 +67,74 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
     def count_all(self) -> int:
         """Cuenta todos los registros activos en la tabla del modelo."""
         with self.session_scope() as session:
-            return session.query(self.model).filter_by(active=True).count()
+            stmt = (
+                select(func.count())
+                .select_from(self.model)
+                .where(self.model.active.is_(True))
+            )
+            return session.scalar(stmt)
 
     def count_all_by(self, field_name: str, field_value: Any) -> int:
         """Cuenta los registros activos filtrados por un campo específico."""
         with self.session_scope() as session:
-            return (
-                session.query(self.model)
-                .filter(getattr(self.model, field_name) == field_value)
-                .filter_by(active=True)
-                .count()
+            stmt = select(func.count()).where(
+                getattr(self.model, field_name) == field_value,
+                self.model.active.is_(True),
             )
+            return session.scalar(stmt)
 
     def find(self, id_key: int) -> S:
         """Busca un registro por su ID y devuelve el modelo validado por el esquema."""
         with self.session_scope() as session:
             model = session.get(self.model, id_key)
-            if model is None or not getattr(model, "active", True):
+            if not model or not model.active:
                 raise RecordNotFoundError(f"No record found with id {id_key}")
             return self.schema.model_validate(model)
 
     def find_by(self, field_name: str, field_value: Any) -> Optional[S]:
         """Busca un registro por un campo específico y devuelve modelo validado por el esquema."""
         with self.session_scope() as session:
-            model = (
-                session.query(self.model)
-                .filter(getattr(self.model, field_name) == field_value)
-                .filter_by(active=True)
-                .first()
+            stmt = (
+                select(self.model)
+                .where(
+                    getattr(self.model, field_name) == field_value,
+                    self.model.active.is_(True),
+                )
+                .limit(1)
             )
-            if model is None:
-                return None
-            return self.schema.model_validate(model)
+            model = session.scalar(stmt)
+            return self.schema.model_validate(model) if model else None
 
     def find_all_by(
         self, field_name: str, field_value: Any, offset: int, limit: int
     ) -> List[S]:
         """Busca todos los registros activos filtrados por un campo específico."""
         with self.session_scope() as session:
-            models = (
-                session.query(self.model)
-                .filter(getattr(self.model, field_name) == field_value)
-                .filter_by(active=True)
+            stmt = (
+                select(self.model)
+                .where(
+                    getattr(self.model, field_name) == field_value,
+                    self.model.active.is_(True),
+                )
                 .offset(offset)
                 .limit(limit)
-                .all()
             )
-            return [self.schema.model_validate(model) for model in models]
+
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
 
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Busca todos los registros activos con paginación."""
         with self.session_scope() as session:
-            models = (
-                session.query(self.model)
-                .filter_by(active=True)
+            stmt = (
+                select(self.model)
+                .where(self.model.active.is_(True))
                 .offset(offset)
                 .limit(limit)
-                .all()
             )
-            return [self.schema.model_validate(model) for model in models]
+
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
 
     def save(self, model: T) -> S:
         """Guarda un nuevo registro y devuelve el modelo validado por el esquema."""
