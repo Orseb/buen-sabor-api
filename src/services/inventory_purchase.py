@@ -34,9 +34,16 @@ class InventoryPurchaseService(BaseServiceImplementation):
             purchase_data.purchase_date = datetime.now()
 
         new_stock = inventory_item.current_stock + purchase_data.quantity
+
+        if purchase_data.unit_cost <= 0:
+            new_inventory_item_cost = inventory_item.purchase_cost
+            purchase_data.unit_cost = 0
+        else:
+            new_inventory_item_cost = purchase_data.unit_cost
+
         self.inventory_item_repository.update(
             inventory_item_id,
-            {"current_stock": new_stock, "purchase_cost": purchase_data.unit_cost},
+            {"current_stock": new_stock, "purchase_cost": new_inventory_item_cost},
         )
         dict_purchase_data = purchase_data.model_dump(exclude_unset=True)
         dict_purchase_data["inventory_item_id"] = inventory_item_id
