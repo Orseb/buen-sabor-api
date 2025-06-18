@@ -123,6 +123,31 @@ class BaseRepositoryImplementation(Generic[T, S], BaseRepository[T, S]):
             result = session.execute(stmt)
             return [self.schema.model_validate(row) for row in result.scalars()]
 
+    def search_by_name(self, search_term: str, offset: int, limit: int) -> List[S]:
+        """Busca registros activos por nombre con paginación."""
+        with self.session_scope() as session:
+            stmt = (
+                select(self.model)
+                .where(
+                    self.model.name.ilike(f"%{search_term}%"),
+                    self.model.active.is_(True),
+                )
+                .offset(offset)
+                .limit(limit)
+            )
+
+        result = session.execute(stmt)
+        return [self.schema.model_validate(row) for row in result.scalars()]
+
+    def count_search_by_name(self, search_term: str) -> int:
+        """Cuenta los registros activos que coinciden con el término de búsqueda por nombre."""
+        with self.session_scope() as session:
+            stmt = select(func.count()).where(
+                self.model.name.ilike(f"%{search_term}%"),
+                self.model.active.is_(True),
+            )
+            return session.scalar(stmt)
+
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Busca todos los registros activos con paginación."""
         with self.session_scope() as session:

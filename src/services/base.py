@@ -53,6 +53,12 @@ class BaseService(Generic[T, S], ABC):
         """Obtiene todos los registros por un campo específico con paginación"""
         pass
 
+    def search_by_name(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Busca registros por nombre con paginación"""
+        pass
+
     @abstractmethod
     def save(self, schema: Any) -> S:
         """Guarda un nuevo registro o actualiza uno existente"""

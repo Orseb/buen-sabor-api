@@ -71,3 +71,23 @@ class UserService(BaseServiceImplementation[UserModel, ResponseUserSchema]):
         return self.repository.update(
             id_key, {"password": new_password, "first_login": False}
         )
+
+    def search_employees_by_name(
+        self, search_term: str, offset: int, limit: int
+    ) -> PaginatedResponseSchema:
+        """Busca empleados por nombre con paginación."""
+        total = self.repository.count_search_employees_by_name(search_term)
+        items = self.repository.search_employees_by_name(search_term, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
+
+    def search_clients_by_name(
+        self, search_term: str, offset: int, limit: int
+    ) -> PaginatedResponseSchema:
+        """Busca clientes por nombre con paginación."""
+        total = self.repository.count_search_clients_by_name(search_term)
+        items = self.repository.search_clients_by_name(search_term, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )

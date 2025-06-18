@@ -234,3 +234,12 @@ class OrderController(
                     detail="El retraso debe ser mayor a 0 minutos.",
                 )
             return self.service.add_delay(id_key, delay_minutes)
+
+        @self.router.get("/all/search", response_model=PaginatedResponseSchema)
+        async def search_orders_by_id(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+        ) -> PaginatedResponseSchema:
+            """Busca órdenes por ID."""
+            return self.service.search_orders_by_id(search_term, offset, limit)

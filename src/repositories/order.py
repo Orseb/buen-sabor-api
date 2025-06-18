@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any, Dict, List
 
-from sqlalchemy import desc, func, select
+from sqlalchemy import String, desc, func, select
 
 from src.models.order import OrderModel, OrderStatus
 from src.models.order_detail import OrderDetailModel
@@ -120,3 +120,31 @@ class OrderRepository(BaseRepositoryImplementation):
                 }
                 for r in results
             ]
+
+    def search_orders_by_id(
+        self, search_term: str, offset: int, limit: int
+    ) -> List[ResponseOrderSchema]:
+        """Busca órdenes activas por ID."""
+        with self.session_scope() as session:
+            stmt = (
+                select(self.model)
+                .where(
+                    func.cast(self.model.id_key, String).ilike(f"%{search_term}%"),
+                    self.model.active.is_(True),
+                )
+                .order_by(desc(self.model.date))
+                .offset(offset)
+                .limit(limit)
+            )
+
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
+
+    def count_search_orders_by_id(self, search_term: str) -> int:
+        """Cuenta órdenes activas que coinciden con el término de búsqueda por ID."""
+        with self.session_scope() as session:
+            stmt = select(func.count()).where(
+                func.cast(self.model.id_key, String).ilike(f"%{search_term}%"),
+                self.model.active.is_(True),
+            )
+            return session.scalar(stmt)

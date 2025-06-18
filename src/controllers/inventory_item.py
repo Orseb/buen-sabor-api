@@ -41,3 +41,54 @@ class InventoryItemController(BaseControllerImplementation):
         ) -> PaginatedResponseSchema:
             """Obtiene todos los items del inventario que son ingredientes."""
             return self.service.get_all_by("is_ingredient", True, offset, limit)
+
+        @self.router.get("/products/search", response_model=PaginatedResponseSchema)
+        def search_product_inventory_items(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+        ) -> PaginatedResponseSchema:
+            """Busca items del inventario que no son ingredientes por nombre."""
+            all_products = self.service.get_all_by("is_ingredient", False, 0, 1000)
+
+            filtered_items = [
+                item
+                for item in all_products.items
+                if search_term.lower() in item.name.lower()
+            ]
+
+            paginated_items = filtered_items[offset : offset + limit]
+
+            return PaginatedResponseSchema(
+                total=len(filtered_items),
+                offset=offset,
+                limit=limit,
+                items=paginated_items,
+            )
+
+        @self.router.get("/ingredients/search", response_model=PaginatedResponseSchema)
+        def search_ingredient_inventory_items(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+            _: Dict[str, Any] = Depends(
+                has_role([UserRole.administrador, UserRole.cocinero])
+            ),
+        ) -> PaginatedResponseSchema:
+            """Busca items del inventario que son ingredientes por nombre."""
+            all_ingredients = self.service.get_all_by("is_ingredient", True, 0, 1000)
+
+            filtered_items = [
+                item
+                for item in all_ingredients.items
+                if search_term.lower() in item.name.lower()
+            ]
+
+            paginated_items = filtered_items[offset : offset + limit]
+
+            return PaginatedResponseSchema(
+                total=len(filtered_items),
+                offset=offset,
+                limit=limit,
+                items=paginated_items,
+            )

@@ -43,6 +43,15 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
             """Obtiene todos los registros paginados"""
             return self.get_all(offset, limit)
 
+        @self.router.get("/search", response_model=PaginatedResponseSchema)
+        async def search_by_name(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+        ) -> PaginatedResponseSchema:
+            """Busca registros por nombre"""
+            return self.search_by_name(search_term, offset, limit)
+
         @self.router.get("/{id_key}", response_model=self.response_schema)
         async def get_one(
             id_key: int, _: Dict[str, Any] = Depends(get_current_user)
@@ -103,6 +112,12 @@ class BaseControllerImplementation(Generic[S, C], BaseController[S]):
     def delete(self, id_key: int) -> S:
         """Elimina un registro por su ID"""
         return self.service.delete(id_key)
+
+    def search_by_name(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Busca registros por nombre"""
+        return self.service.search_by_name(search_term, offset, limit)
 
     @schema.setter
     def schema(self, value: Type[S]) -> None:

@@ -64,3 +64,23 @@ class UserController(BaseControllerImplementation):
             return self.service.update_employee_password(
                 current_user["id"], hash_password(password)
             )
+
+        @self.router.get("/employees/search", response_model=PaginatedResponseSchema)
+        async def search_employees(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> PaginatedResponseSchema:
+            """Busca empleados por nombre."""
+            return self.service.search_employees_by_name(search_term, offset, limit)
+
+        @self.router.get("/clients/search", response_model=PaginatedResponseSchema)
+        async def search_clients(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+            _: dict = Depends(has_role([UserRole.administrador])),
+        ) -> PaginatedResponseSchema:
+            """Busca clientes por nombre."""
+            return self.service.search_clients_by_name(search_term, offset, limit)

@@ -86,3 +86,13 @@ class InvoiceController:
                 media_type="application/pdf",
                 headers={"Content-Disposition": f"attachment; filename={filename}"},
             )
+
+        @self.router.get("/search", response_model=PaginatedResponseSchema)
+        async def search_invoices(
+            search_term: str,
+            offset: int = 0,
+            limit: int = 10,
+            _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero])),
+        ) -> PaginatedResponseSchema:
+            """Busca facturas por número."""
+            return self.service.search_invoices_by_number(search_term, offset, limit)

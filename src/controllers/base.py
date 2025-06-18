@@ -46,3 +46,9 @@ class BaseController(Generic[S], ABC):
     def delete(self, id_key: int) -> S:
         """Elimina un registro del recurso por su ID"""
         pass
+
+    def search_by_name(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> List[S]:
+        """Busca registros por nombre"""
+        pass

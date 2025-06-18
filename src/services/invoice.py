@@ -11,6 +11,7 @@ from src.repositories.order import OrderRepository
 from src.schemas.invoice import CreateInvoiceSchema, ResponseInvoiceSchema
 from src.schemas.invoice_detail import CreateInvoiceDetailSchema
 from src.schemas.order import ResponseOrderSchema
+from src.schemas.pagination import PaginatedResponseSchema
 from src.services.base_implementation import BaseServiceImplementation
 from src.utils.email import send_credit_note_email, send_invoice_email
 from src.utils.reportlab import generate_pdf_report
@@ -159,3 +160,13 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
     def _restore_inventory_stock(self, order: ResponseOrderSchema) -> None:
         """Restaura el stock de inventario basado en los detalles del pedido."""
         self.inventory_item_repository.restore_inventory_stock(order)
+
+    def search_invoices_by_number(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Busca facturas por número con paginación."""
+        total = self.repository.count_search_invoices_by_number(search_term)
+        items = self.repository.search_invoices_by_number(search_term, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )

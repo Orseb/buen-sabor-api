@@ -67,6 +67,16 @@ class BaseServiceImplementation(Generic[T, S], BaseService[T, S]):
             total=total, offset=offset, limit=limit, items=items
         )
 
+    def search_by_name(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Busca registros por nombre con paginación"""
+        total = self.repository.count_search_by_name(search_term)
+        items = self.repository.search_by_name(search_term, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )
+
     def save(self, schema: Any) -> S:
         """Guarda un nuevo registro o actualiza uno existente"""
         model_instance = self.to_model(schema)

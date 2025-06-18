@@ -315,3 +315,13 @@ class OrderService(BaseServiceImplementation[OrderModel, ResponseOrderSchema]):
         order = self.repository.find(order_id)
         new_estimated_time = order.estimated_time + delay_minutes
         return self.repository.update(order_id, {"estimated_time": new_estimated_time})
+
+    def search_orders_by_id(
+        self, search_term: str, offset: int = 0, limit: int = 10
+    ) -> PaginatedResponseSchema:
+        """Busca órdenes por ID con paginación."""
+        total = self.repository.count_search_orders_by_id(search_term)
+        items = self.repository.search_orders_by_id(search_term, offset, limit)
+        return PaginatedResponseSchema(
+            total=total, offset=offset, limit=limit, items=items
+        )

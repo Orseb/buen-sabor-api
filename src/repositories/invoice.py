@@ -88,3 +88,30 @@ class InvoiceRepository(BaseRepositoryImplementation):
             conditions.append(InvoiceModel.date <= end_date)
 
         return and_(*conditions) if conditions else True
+
+    def search_invoices_by_number(
+        self, search_term: str, offset: int, limit: int
+    ) -> List[ResponseInvoiceSchema]:
+        """Busca facturas activas por número."""
+        with self.session_scope() as session:
+            stmt = (
+                select(self.model)
+                .where(
+                    self.model.number.ilike(f"%{search_term}%"),
+                    self.model.active.is_(True),
+                )
+                .offset(offset)
+                .limit(limit)
+            )
+
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
+
+    def count_search_invoices_by_number(self, search_term: str) -> int:
+        """Cuenta facturas activas que coinciden con el término de búsqueda por número."""
+        with self.session_scope() as session:
+            stmt = select(func.count()).where(
+                self.model.number.ilike(f"%{search_term}%"),
+                self.model.active.is_(True),
+            )
+            return session.scalar(stmt)

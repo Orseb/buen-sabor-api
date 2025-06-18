@@ -74,3 +74,63 @@ class UserRepository(BaseRepositoryImplementation):
         )
         with self.session_scope() as session:
             return session.scalar(stmt)
+
+    def search_employees_by_name(
+        self, search_term: str, offset: int, limit: int
+    ) -> List[ResponseUserSchema]:
+        """Busca empleados activos por nombre completo."""
+        stmt = (
+            select(self.model)
+            .where(
+                self.model.full_name.ilike(f"%{search_term}%"),
+                self.model.active.is_(True),
+                self.model.role != UserRole.cliente,
+                self.model.role != UserRole.administrador,
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        with self.session_scope() as session:
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
+
+    def count_search_employees_by_name(self, search_term: str) -> int:
+        """Cuenta empleados activos que coinciden con el término de búsqueda."""
+        stmt = select(func.count()).where(
+            self.model.full_name.ilike(f"%{search_term}%"),
+            self.model.active.is_(True),
+            self.model.role != UserRole.cliente,
+            self.model.role != UserRole.administrador,
+        )
+        with self.session_scope() as session:
+            return session.scalar(stmt)
+
+    def search_clients_by_name(
+        self, search_term: str, offset: int, limit: int
+    ) -> List[ResponseUserSchema]:
+        """Busca clientes activos por nombre completo."""
+        stmt = (
+            select(self.model)
+            .where(
+                self.model.full_name.ilike(f"%{search_term}%"),
+                self.model.active.is_(True),
+                self.model.role == UserRole.cliente,
+            )
+            .offset(offset)
+            .limit(limit)
+        )
+
+        with self.session_scope() as session:
+            result = session.execute(stmt)
+            return [self.schema.model_validate(row) for row in result.scalars()]
+
+    def count_search_clients_by_name(self, search_term: str) -> int:
+        """Cuenta clientes activos que coinciden con el término de búsqueda."""
+        stmt = select(func.count()).where(
+            self.model.full_name.ilike(f"%{search_term}%"),
+            self.model.active.is_(True),
+            self.model.role == UserRole.cliente,
+        )
+        with self.session_scope() as session:
+            return session.scalar(stmt)

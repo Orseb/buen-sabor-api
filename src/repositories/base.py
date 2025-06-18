@@ -58,6 +58,14 @@ class BaseRepository(Generic[T, S], ABC):
         """Encuentra todos los registros por un campo específico y paginación."""
         pass
 
+    def search_by_name(self, search_term: str, offset: int, limit: int) -> List[S]:
+        """Busca registros activos por nombre con paginación."""
+        pass
+
+    def count_search_by_name(self, search_term: str) -> int:
+        """Cuenta los registros activos que coinciden con el término de búsqueda por nombre."""
+        pass
+
     @abstractmethod
     def find_all(self, offset: int = 0, limit: int = 10) -> List[S]:
         """Encuentra todos los registros con paginación."""
