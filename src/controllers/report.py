@@ -48,11 +48,11 @@ class ReportController:
 
         @self.router.get("/revenue/excel")
         async def get_excel_revenue_report(
-            start_date: datetime = Query(...),
-            end_date: datetime = Query(...),
+            start_date: datetime = Query(None),
+            end_date: datetime = Query(None),
             _: dict = Depends(has_role([UserRole.administrador])),
         ) -> StreamingResponse:
-            """Genera un reporte de ingresos en formato Excel para un período específico."""
+            """Genera un reporte de ingresos en formato Excel para el período especificado."""
             buffer = BytesIO()
             self.service.get_excel_revenue_report(start_date, end_date, buffer)
             buffer.seek(0)
@@ -61,7 +61,7 @@ class ReportController:
                 media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 headers={
                     "Content-Disposition": f"attachment; filename=revenue_report_"
-                    f"{start_date.strftime('%Y%m%d')}_to_{end_date.strftime('%Y%m%d')}"
+                    f"{datetime.now().strftime('%Y%m%d')}_to_{datetime.now().strftime('%Y%m%d')}"
                     f".xlsx"
                 },
             )
