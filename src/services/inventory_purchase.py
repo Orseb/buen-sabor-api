@@ -35,6 +35,9 @@ class InventoryPurchaseService(BaseServiceImplementation):
 
         new_stock = inventory_item.current_stock + purchase_data.quantity
 
+        if new_stock < 0:
+            raise ValueError("La cantidad de stock no puede ser negativa.")
+
         if purchase_data.unit_cost <= 0:
             new_inventory_item_cost = inventory_item.purchase_cost
             purchase_data.unit_cost = 0
