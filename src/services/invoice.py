@@ -161,12 +161,14 @@ class InvoiceService(BaseServiceImplementation[InvoiceModel, ResponseInvoiceSche
         """Restaura el stock de inventario basado en los detalles del pedido."""
         self.inventory_item_repository.restore_inventory_stock(order)
 
-    def search_invoices_by_number(
+    def search_invoices_by_number_or_client(
         self, search_term: str, offset: int = 0, limit: int = 10
     ) -> PaginatedResponseSchema:
-        """Busca facturas por número con paginación."""
-        total = self.repository.count_search_invoices_by_number(search_term)
-        items = self.repository.search_invoices_by_number(search_term, offset, limit)
+        """Busca facturas por número de factura o nombre de cliente con paginación."""
+        total = self.repository.count_search_invoices_by_number_or_client(search_term)
+        items = self.repository.search_invoices_by_number_or_client(
+            search_term, offset, limit
+        )
         return PaginatedResponseSchema(
             total=total, offset=offset, limit=limit, items=items
         )

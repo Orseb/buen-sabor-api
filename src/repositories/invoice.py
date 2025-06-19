@@ -89,17 +89,26 @@ class InvoiceRepository(BaseRepositoryImplementation):
 
         return and_(*conditions) if conditions else True
 
-    def search_invoices_by_number(
+    def search_invoices_by_number_or_client(
         self, search_term: str, offset: int, limit: int
     ) -> List[ResponseInvoiceSchema]:
-        """Busca facturas activas por número."""
+        """Busca facturas activas por número de factura o nombre de cliente."""
         with self.session_scope() as session:
+            from src.models.order import OrderModel
+            from src.models.user import UserModel
+
             stmt = (
                 select(self.model)
+                .join(OrderModel, self.model.order_id == OrderModel.id_key)
+                .join(UserModel, OrderModel.user_id == UserModel.id_key)
                 .where(
-                    self.model.number.ilike(f"%{search_term}%"),
+                    (
+                        self.model.number.ilike(f"%{search_term}%")
+                        | UserModel.full_name.ilike(f"%{search_term}%")
+                    ),
                     self.model.active.is_(True),
                 )
+                .order_by(self.model.date.desc())
                 .offset(offset)
                 .limit(limit)
             )
@@ -107,11 +116,23 @@ class InvoiceRepository(BaseRepositoryImplementation):
             result = session.execute(stmt)
             return [self.schema.model_validate(row) for row in result.scalars()]
 
-    def count_search_invoices_by_number(self, search_term: str) -> int:
-        """Cuenta facturas activas que coinciden con el término de búsqueda por número."""
+    def count_search_invoices_by_number_or_client(self, search_term: str) -> int:
+        """Cuenta facturas que coinciden con el término de búsqueda por id o nombre de cliente."""
         with self.session_scope() as session:
-            stmt = select(func.count()).where(
-                self.model.number.ilike(f"%{search_term}%"),
-                self.model.active.is_(True),
+            from src.models.order import OrderModel
+            from src.models.user import UserModel
+
+            stmt = (
+                select(func.count())
+                .select_from(self.model)
+                .join(OrderModel, self.model.order_id == OrderModel.id_key)
+                .join(UserModel, OrderModel.user_id == UserModel.id_key)
+                .where(
+                    (
+                        self.model.number.ilike(f"%{search_term}%")
+                        | UserModel.full_name.ilike(f"%{search_term}%")
+                    ),
+                    self.model.active.is_(True),
+                )
             )
-            return session.scalar(stmt)
+        return session.scalar(stmt)

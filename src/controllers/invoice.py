@@ -94,5 +94,7 @@ class InvoiceController:
             limit: int = 10,
             _: dict = Depends(has_role([UserRole.administrador, UserRole.cajero])),
         ) -> PaginatedResponseSchema:
-            """Busca facturas por número."""
-            return self.service.search_invoices_by_number(search_term, offset, limit)
+            """Busca facturas por número de factura o nombre de cliente."""
+            return self.service.search_invoices_by_number_or_client(
+                search_term, offset, limit
+            )
