@@ -25,17 +25,6 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
         )
         self.inventory_item_category_repository = InventoryItemCategoryRepository()
 
-    def save(
-        self, schema: CreateManufacturedItemCategorySchema
-    ) -> ResponseManufacturedItemCategorySchema:
-        """Guarda una nueva categoría de productos, verificando las reglas de jerarquía."""
-        if schema.parent_id:
-            parent = self.repository.find(schema.parent_id)
-            if parent.parent_id:
-                raise ValueError("Las subcategorías no pueden tener subcategorías.")
-
-        return super().save(schema)
-
     def update(
         self,
         id_key: int,
@@ -55,10 +44,6 @@ class ManufacturedItemCategoryService(BaseServiceImplementation):
         if schema.parent_id:
             if schema.parent_id == id_key:
                 raise ValueError("Una categoría no puede ser su propio padre.")
-
-            parent = self.repository.find(schema.parent_id)
-            if parent.parent_id:
-                raise ValueError("Las subcategorías no pueden tener subcategorías.")
 
         return super().update(id_key, schema)
 
